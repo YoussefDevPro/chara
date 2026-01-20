@@ -11,9 +11,9 @@
 ---
 
 ## 2. Workspace
-- [ ] Create workspace (`create_workspace`) – owner = current user
-- [ ] Get workspace by ID (`get_workspace_by_id`) – only owner can access
-- [ ] Update workspace (`update_workspace`) – only owner
+- [x] Create workspace (`create_workspace`) – owner = current user
+- [x] Get workspace by ID (`get_workspace_by_id`) – only owner can access
+- [x] Update workspace (`update_workspace`) – only owner
 - [ ] Delete workspace (`delete_workspace`) – only owner
 - [ ] List workspaces by user (`list_workspaces_by_user`) – only self
 

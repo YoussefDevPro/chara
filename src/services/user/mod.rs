@@ -32,8 +32,8 @@ pub async fn create_user(new_user: InsertUser) -> Result<Option<User>, Error> {
         .ok_or(Error::NotFound)
 }
 
-pub async fn get_user_by_session_token(session_token: String) -> Result<Option<User>, Error> {
-    let session: Session = get_session_with_token(session_token).await?;
+pub async fn get_user_by_session_token(session_token: &String) -> Result<Option<User>, Error> {
+    let session: Session = get_session_with_token(session_token.to_string()).await?;
     if session.is_expired() {
         return Err(Error::Forbidden);
     }
@@ -51,7 +51,7 @@ pub async fn update_user(
     user_id: UserId,
     session_token: String,
 ) -> Result<Option<User>, Error> {
-    let user = get_user_by_session_token(session_token)
+    let user = get_user_by_session_token(&session_token)
         .await?
         .ok_or(Error::NotFound)?;
     match user.role {
@@ -78,7 +78,7 @@ pub async fn update_user(
 
 /// heck, only an admin can delete a user too XD
 pub async fn delete_user(user: UserId, session_token: String) -> Result<Option<User>, Error> {
-    let owner = get_user_by_session_token(session_token)
+    let owner = get_user_by_session_token(&session_token)
         .await?
         .ok_or(Error::NotFound)?;
     match owner.role {
@@ -98,7 +98,7 @@ pub async fn delete_user(user: UserId, session_token: String) -> Result<Option<U
 
 /// only admin can do that :p
 pub async fn list_all_users(session_token: String) -> Result<Vec<PublicUser>, Error> {
-    let user = get_user_by_session_token(session_token)
+    let user = get_user_by_session_token(&session_token)
         .await?
         .ok_or(Error::Forbidden)?;
     match user.role {

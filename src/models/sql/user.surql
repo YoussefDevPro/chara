@@ -10,7 +10,7 @@ DEFINE FIELD is_deleted ON user TYPE bool;
 
 DEFINE FIELD role ON user
     TYPE string
-    ASSERT $value IN ["user", "admin", "mini_admin"];
+    ASSERT $value IN ["user", "admin"];
 
 DEFINE INDEX email_idx ON user COLUMNS email UNIQUE;
 DEFINE INDEX username_idx ON user COLUMNS username UNIQUE;
