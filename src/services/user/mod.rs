@@ -13,6 +13,8 @@ const USER: &str = "user";
 // permissions like reading its own data and anoter that can do pretty much everything, but what if
 // i added permissions, yea, this could make everything just way better and easier,
 // EDIT: its totally not easier wtf did i just write 2 weeks ago
+//
+// MRAOW I HATE MY LIFE UWU
 
 // like hey, the admin dont need that MANY info , right ?
 #[derive(Deserialize)]
