@@ -10,6 +10,7 @@ pub struct Workspace {
     pub name: String,
     pub created_at: Datetime,
     pub updated_at: Datetime,
+    pub is_soft_deleted: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -26,6 +27,7 @@ impl Workspace {
             name: input.name,
             created_at: Datetime::default(),
             updated_at: Datetime::default(),
+            is_soft_deleted: false,
         }
     }
 }
@@ -33,4 +35,9 @@ impl Workspace {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkspacePatch {
     pub name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdminWorkspacePatch {
+    pub is_soft_deleted: bool,
 }

@@ -33,3 +33,34 @@ pub struct SessionId(pub Thing);
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct ViewId(pub Thing);
+
+pub trait Key {
+    fn key(&self) -> String;
+}
+
+macro_rules! impl_key {
+    ($($t:ty),*) => {
+        $(
+            impl Key for $t {
+                fn key(&self) -> String {
+                    self.0.id.to_string()
+                }
+            }
+        )*
+    }
+}
+
+// Inchelligence ☉ ‿ ⚆
+impl_key!(
+    UserId,
+    WorkspaceId,
+    BaseId,
+    TableId,
+    CellId,
+    RecordId,
+    FieldId,
+    RelationId,
+    IdentityId,
+    SessionId,
+    ViewId
+);

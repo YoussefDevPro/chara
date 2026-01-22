@@ -1,5 +1,12 @@
+mod base;
+mod cell;
 mod error;
+mod field;
+mod identity;
+mod record;
+mod relation;
 mod session;
+mod table;
 mod user;
 mod workspace;
 

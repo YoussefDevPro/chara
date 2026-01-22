@@ -62,6 +62,21 @@ impl User {
             role: UserRole::User,
         }
     }
+    pub fn can_admin(&self) -> bool {
+        matches!(self.role, UserRole::Admin)
+    }
+
+    pub fn can_edit_user(&self, target: &UserId) -> bool {
+        self.can_admin() || self.id == Some(target.clone())
+    }
+
+    pub fn can_list_users(&self) -> bool {
+        self.can_admin()
+    }
+
+    pub fn can_delete_user(&self, target: &UserId) -> bool {
+        self.can_admin() || self.id == Some(target.clone())
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

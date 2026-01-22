@@ -1,8 +1,8 @@
-use axum::Json;
 use axum::http::StatusCode;
 use axum::response::ErrorResponse;
 use axum::response::IntoResponse;
 use axum::response::Response;
+use axum::Json;
 use serde::Deserialize;
 use thiserror::Error as ThisError;
 
@@ -17,6 +17,9 @@ pub enum Error {
     #[error("forbidden")]
     Forbidden,
 
+    #[error("meanie request")]
+    BadRequest,
+
     #[error("database error")]
     Db,
 }
@@ -28,6 +31,7 @@ impl IntoResponse for Error {
             Error::NotFound => (StatusCode::NOT_FOUND, "not_found"),
             Error::Forbidden => (StatusCode::FORBIDDEN, "forbidden"),
             Error::Db => (StatusCode::INTERNAL_SERVER_ERROR, "database_error"),
+            Error::BadRequest => (StatusCode::BAD_REQUEST, "bad request"),
         };
 
         (status, Json(ErrorResponse::from(error))).0.into_response()

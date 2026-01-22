@@ -1,5 +1,6 @@
 use serde::Deserialize;
 
+use crate::models::ids::Key;
 use crate::models::ids::UserId;
 use crate::models::session::Session;
 use crate::models::user::*;
@@ -16,15 +17,114 @@ const USER: &str = "user";
 //
 // MRAOW I HATE MY LIFE UWU
 
-// like hey, the admin dont need that MANY info , right ?
-#[derive(Deserialize)]
-pub struct PublicUser {
-    id: UserId,
-    username: Username,
-    role: UserRole,
-    is_deleted: bool,
+pub struct UserService {
+    pub(crate) actor: User, // u signed the contract, now u can only [act] :3 /silly
 }
 
+impl UserService {
+    /// Initialize a `UserService` for the user associated with the given session token.
+    ///
+    /// # Arguments
+    /// - `session_token`: The session token of the authenticated user.
+    ///
+    /// # Returns
+    /// - `Ok(Self)` if the session is valid and the user exists.
+    /// - `Err(Error::Forbidden)` if the session is expired.
+    /// - `Err(Error::NotFound)` if the user does not exist or is deleted.
+    pub async fn init(session_token: &str) -> Result<Self, Error> {
+        let session: Session = get_session_with_token(session_token.to_string()).await?;
+        if session.is_expired() {
+            return Err(Error::Forbidden);
+        }
+
+        let user: User = DB
+            .select((USER, session.user.key()))
+            .await?
+            .ok_or(Error::NotFound)?;
+
+        if user.is_deleted {
+            return Err(Error::NotFound);
+        }
+
+        Ok(Self { actor: user })
+    }
+
+    /// Update a target user with the given patch.
+    ///
+    /// The permissions depend on the actor:
+    /// - Admin can update any user fields (uses `AdminUserPatch`).
+    /// - Regular users can only update their own allowed fields (uses `SelfUserPatch`).
+    ///
+    /// # Arguments
+    /// - `target`: The `UserId` of the user to update.
+    /// - `patch`: The patch data with fields to update.
+    ///
+    /// # Returns
+    /// - `Ok(User)` with updated user data.
+    /// - `Err(Error::Forbidden)` if the actor cannot update this user.
+    /// - `Err(Error::NotFound)` if the user does not exist.
+    pub async fn update_user(&self, target: UserId, patch: UserPatch) -> Result<User, Error> {
+        if !self.actor.can_edit_user(&target) {
+            return Err(Error::Forbidden);
+        }
+
+        if self.actor.can_admin() {
+            DB.update((USER, target.key()))
+                .content(AdminUserPatch::from(patch))
+                .await?
+                .ok_or(Error::NotFound)?
+        } else {
+            DB.update((USER, target.key()))
+                .content(SelfUserPatch::from(patch))
+                .await?
+                .ok_or(Error::NotFound)?
+        }
+    }
+
+    /// Delete a target user (admin only).
+    ///
+    /// # Arguments
+    /// - `target`: The `UserId` of the user to delete.
+    ///
+    /// # Returns
+    /// - `Ok(User)` with the deleted user data.
+    /// - `Err(Error::Forbidden)` if the actor cannot delete this user.
+    pub async fn delete_user(&self, target: UserId) -> Result<User, Error> {
+        if !self.actor.can_delete_user(&target) {
+            return Err(Error::Forbidden);
+        }
+        DB.update((USER, target.key()))
+            .content(AdminUserPatch {
+                is_deleted: Some(true),
+                first_name: None,
+                last_name: None,
+                username: None,
+            })
+            .await?
+            .ok_or(Error::NotFound)?
+    }
+
+    /// List all users (admin only).
+    ///
+    /// # Returns
+    /// - `Ok(Vec<PublicUser>)` containing public info of all users.
+    /// - `Err(Error::Forbidden)` if the actor cannot list users.
+    pub async fn list_users(&self) -> Result<Vec<PublicUser>, Error> {
+        if !self.actor.can_list_users() {
+            return Err(Error::Forbidden);
+        }
+        Ok(DB.select(USER).await?)
+    }
+}
+
+/// Create a new user in the database.
+///
+/// # Arguments
+/// - `new_user`: The `InsertUser` struct containing the user data to insert.
+///
+/// # Returns
+/// - `Ok(Some(User))` with the created user.
+/// - `Err(Error::NotFound)` if the creation fails.
 pub async fn create_user(new_user: InsertUser) -> Result<Option<User>, Error> {
     DB.create(USER)
         .content(User::from_insert(new_user))
@@ -32,77 +132,21 @@ pub async fn create_user(new_user: InsertUser) -> Result<Option<User>, Error> {
         .ok_or(Error::NotFound)
 }
 
-pub async fn get_user_by_session_token(session_token: &String) -> Result<Option<User>, Error> {
-    let session: Session = get_session_with_token(session_token.to_string()).await?;
-    if session.is_expired() {
-        return Err(Error::Forbidden);
-    }
-    let user_id = session.user.0.id.to_string();
-    let user: User = DB.select((USER, user_id)).await?.ok_or(Error::NotFound)?;
-    if user.is_deleted {
-        return Err(Error::NotFound); // hihihi, how will they know =3
-    };
-    Ok(Some(user))
-}
+/// Public view of a user.
+///
+/// Only exposes basic info.
+/// Admins may see more internally.
+#[derive(Deserialize)]
+pub struct PublicUser {
+    /// The user's unique ID.
+    pub id: UserId,
 
-/// only admin can update a user
-pub async fn update_user(
-    user_updated: UserPatch,
-    user_id: UserId,
-    session_token: String,
-) -> Result<Option<User>, Error> {
-    let user = get_user_by_session_token(&session_token)
-        .await?
-        .ok_or(Error::NotFound)?;
-    match user.role {
-        UserRole::Admin => {
-            let patch: AdminUserPatch = user_updated.clone().into();
-            DB.update((USER, user_id.0.id.to_string()))
-                .content(patch)
-                .await
-                .map_err(|_| Error::Db)
-        }
-        UserRole::User => {
-            if user.id == Some(user_id.clone()) {
-                let patch: SelfUserPatch = user_updated.into();
-                DB.update((USER, user_id.0.id.to_string()))
-                    .content(patch)
-                    .await
-                    .map_err(|_| Error::Db)
-            } else {
-                Err(Error::Forbidden)
-            }
-        }
-    }
-}
+    /// The user's username.
+    pub username: Username,
 
-/// heck, only an admin can delete a user too XD
-pub async fn delete_user(user: UserId, session_token: String) -> Result<Option<User>, Error> {
-    let owner = get_user_by_session_token(&session_token)
-        .await?
-        .ok_or(Error::NotFound)?;
-    match owner.role {
-        UserRole::User => Err(Error::Forbidden),
-        UserRole::Admin => DB
-            .update((USER, user.0.id.to_string()))
-            .content(UserPatch {
-                is_deleted: Some(true),
-                last_name: None,
-                first_name: None,
-                username: None,
-            })
-            .await?
-            .ok_or(Error::NotFound)?,
-    }
-}
+    /// The user's role (Admin or User).
+    pub role: UserRole,
 
-/// only admin can do that :p
-pub async fn list_all_users(session_token: String) -> Result<Vec<PublicUser>, Error> {
-    let user = get_user_by_session_token(&session_token)
-        .await?
-        .ok_or(Error::Forbidden)?;
-    match user.role {
-        UserRole::Admin => Ok(DB.select(USER).await?),
-        UserRole::User => Err(Error::Forbidden),
-    }
+    /// Whether the user is deleted.
+    pub is_deleted: bool,
 }

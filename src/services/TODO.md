@@ -14,70 +14,70 @@
 - [x] Create workspace (`create_workspace`) – owner = current user
 - [x] Get workspace by ID (`get_workspace_by_id`) – only owner can access
 - [x] Update workspace (`update_workspace`) – only owner
-- [ ] Delete workspace (`delete_workspace`) – only owner
-- [ ] List workspaces by user (`list_workspaces_by_user`) – only self
+- [x] Delete workspace (`delete_workspace`) – only owner (Edit: two fn should be here instead, a soft delet and a real delet, the rael delet is only done by the admin of the platform)
+- [x] List workspaces by user (`list_workspaces_by_user`) – only self
 
 ---
 
 ## 3. Base
-- [ ] Create base (`create_base`) – workspace owner only
-- [ ] Get base by ID (`get_base_by_id`) – only workspace owner
-- [ ] Update base (`update_base`) – only workspace owner
-- [ ] Delete base (`delete_base`) – only workspace owner
-- [ ] List bases by workspace (`list_bases_by_workspace`) – only workspace owner
-
+- [x] Create base (`create_base`) – workspace owner only
+- [x] Get base by ID (`get_base_by_id`) – only workspace owner
+- [x] Update base (`update_base`) – only workspace owner
+- [x] Delete base (`delete_base`) – only workspace owner
+- [x] List bases by workspace (`list_bases_by_workspace`) – only workspace owner
+### things was done using ai, especially for the next stuff bc i made a strong base where ai can depend on it so it will not make spagethi code, dw i read it before pasting and trying to understand, every variable and functions and see if there is any bug :p
 ---
 
 ## 4. Table
-- [ ] Create table (`create_table`) – only workspace owner
-- [ ] Get table by ID (`get_table_by_id`) – only workspace owner
-- [ ] Update table (`update_table`) – only workspace owner
-- [ ] Delete table (`delete_table`) – only workspace owner
-- [ ] List tables by base (`list_tables_by_base`) – only workspace owner
+- [x] Create table (`create_table`) – only workspace owner
+- [x] Get table by ID (`get_table_by_id`) – only workspace owner
+- [x] Update table (`update_table`) – only workspace owner
+- [x] Delete table (`delete_table`) – only workspace owner
+- [x] List tables by base (`list_tables_by_base`) – only workspace owner
 
 ---
 
 ## 5. Field
-- [ ] Create field (`create_field`) – only workspace owner
-- [ ] Get field by ID (`get_field_by_id`) – only workspace owner
-- [ ] Update field (`update_field`) – only workspace owner
-- [ ] Delete field (`delete_field`) – only workspace owner
-- [ ] List fields by table (`list_fields_by_table`) – only workspace owner
+- [x] Create field (`create_field`) – only workspace owner
+- [x] Get field by ID (`get_field_by_id`) – only workspace owner
+- [x] Update field (`update_field`) – only workspace owner
+- [x] Delete field (`delete_field`) – only workspace owner
+- [x] List fields by table (`list_fields_by_table`) – only workspace owner
 
 ---
 
 ## 6. Record
-- [ ] Create record (`create_record`) – only workspace owner
-- [ ] Get record by ID (`get_record_by_id`) – only workspace owner
-- [ ] Update record (`update_record`) – only workspace owner
-- [ ] Delete record (`delete_record`) – only workspace owner
-- [ ] List records by table (`list_records_by_table`) – only workspace owner
+- [x] Create record (`create_record`) – only workspace owner
+- [x] Get record by ID (`get_record_by_id`) – only workspace owner
+- [x] Update record (`update_record`) – only workspace owner
+- [x] Delete record (`delete_record`) – only workspace owner
+- [x] List records by table (`list_records_by_table`) – only workspace owner
 
 ---
 
 ## 7. Cell
-- [ ] Create cell (`create_cell`) – only workspace owner
-- [ ] Get cell by ID (`get_cell_by_id`) – only workspace owner
-- [ ] Update cell (`update_cell`) – only workspace owner
-- [ ] Delete cell (`delete_cell`) – only workspace owner
-- [ ] List cells by record (`list_cells_by_record`) – only workspace owner
-- [ ] List cells by field (`list_cells_by_field`) – only workspace owner
+- [x] Create cell (`create_cell`) – only workspace owner
+- [x] Get cell by ID (`get_cell_by_id`) – only workspace owner
+- [x] Update cell (`update_cell`) – only workspace owner
+- [x] Delete cell (`delete_cell`) – only workspace owner
+- [x] List cells by record (`list_cells_by_record`) – only workspace owner
+- [x] List cells by field (`list_cells_by_field`) – only workspace owner
 
 ---
 
 ## 8. Identity
-- [ ] Create identity (`create_identity`) – only self/admin
-- [ ] Get identity by ID (`get_identity_by_id`) – only self/admin
-- [ ] Get identity by external ID (`get_identity_by_external_id`) – only self/admin
-- [ ] Delete identity (`delete_identity`) – only self/admin
-- [ ] List identities by user (`list_identities_by_user`) – only self/admin
+- [x] Create identity (`create_identity`) – only self/admin
+- [x] Get identity by ID (`get_identity_by_id`) – only self/admin
+- [x] Get identity by external ID (`get_identity_by_external_id`) – only self/admin
+- [x] Delete identity (`delete_identity`) – only self/admin
+- [x] List identities by user (`list_identities_by_user`) – only self/admin
 
 ---
 
 ## 9. Relation
-- [ ] Create relation (`create_relation`) – only workspace owner
-- [ ] Get relation by ID (`get_relation_by_id`) – only workspace owner
-- [ ] Delete relation (`delete_relation`) – only workspace owner
-- [ ] List relations from record (`list_relations_from_record`) – only workspace owner
-- [ ] List relations to record (`list_relations_to_record`) – only workspace owner
+- [x] Create relation (`create_relation`) – only workspace owner
+- [x] Get relation by ID (`get_relation_by_id`) – only workspace owner
+- [x] Delete relation (`delete_relation`) – only workspace owner
+- [x] List relations from record (`list_relations_from_record`) – only workspace owner
+- [x] List relations to record (`list_relations_to_record`) – only workspace owner
 
