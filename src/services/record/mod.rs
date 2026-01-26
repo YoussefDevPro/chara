@@ -65,7 +65,7 @@ impl RecordService {
         record.touch();
 
         DB.update((RECORD, id.key()))
-            .content(record)
+            .content(patch)
             .await?
             .ok_or(Error::Db)
     }

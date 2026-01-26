@@ -9,6 +9,7 @@ mod session;
 mod table;
 mod user;
 mod workspace;
+mod workspace_users;
 
 use crate::services::error::Error;
 use std::sync::LazyLock;
@@ -39,6 +40,7 @@ async fn init_db() -> Result<(), Error> {
         .query(include_str!("../../src/models/sql/cell.surql"))
         .query(include_str!("../../src/models/sql/record.surql"))
         .query(include_str!("../../src/models/sql/relation.surql"))
+        .query(include_str!("../../src/models/sql/workspace_users.surql"))
         .await?;
     Ok(())
 }

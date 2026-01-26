@@ -46,3 +46,5 @@ impl Relation {
         }
     }
 }
+
+// i feel like i fucked up the architecture of each service so bad

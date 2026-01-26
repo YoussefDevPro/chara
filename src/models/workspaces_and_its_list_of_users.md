@@ -63,8 +63,16 @@ thats actually what i was thinking abt
 
 alr, so first of all, i have to make for each model, a bitmask for its permission list, and i have to make a WorkspaceUsersService to handle those kind of stuff, and rewrite the WorkspaceService to use WorkspaceUsersService etc, and yeah, i should make a todo list lol
 
-
-
+alr, so a workspace user, what it should have, hm, i was thinking, we already know that a guest can only have very restricted read only permissions and a normal user, only have the permissions we gave to him, and the admin ofc have the control over all the workspace, but only the owner have it, and also, well have a permissions table, where we store
+PERMISSIONS
+ |- tables
+ |  |- TableID
+ | ...  |_ permissions : u32
+ |- bases
+ |  |- BaseID
+ .. ..  |_ permissions: u32
+this permission points to a unique workspace user, and can only modified by the admin
+and a workspace user, points to the UserId of the user, and has the created_at modifed_at, it can also have a diff username, the USer that points to it owns the real first/last name, and thats it ig ?  
 
 
 

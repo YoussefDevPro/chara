@@ -34,11 +34,14 @@ pub struct SessionId(pub Thing);
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct ViewId(pub Thing);
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct WorkspaceUserId(pub Thing);
+
 pub trait Key {
     fn key(&self) -> String;
 }
 
-macro_rules! impl_key {
+macro_rules! impl_key { // god dang it macros are so damn hard to read, i wrote this tho...
     ($($t:ty),*) => {
         $(
             impl Key for $t {
@@ -62,5 +65,6 @@ impl_key!(
     RelationId,
     IdentityId,
     SessionId,
-    ViewId
+    ViewId,
+    WorkspaceUserId
 );
