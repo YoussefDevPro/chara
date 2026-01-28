@@ -34,7 +34,6 @@ impl Record {
 
     pub fn touch(&mut self) {
         // GOD DAMN IT I FORGOT TO IMPL TS FEATUR TO OTHER STRUCT OMG
-        // Update updated_at timestamp
         self.updated_at = Datetime::from(chrono::Utc::now());
     }
 }

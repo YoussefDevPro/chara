@@ -15,6 +15,7 @@ use surrealdb::sql::Datetime;
 // migrate from formated text to non formatted text.
 // each field kind requires different type of migration wich will be a lil tricky
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FieldKind {
     Text(TextBased),
     Number(Numerical),
@@ -25,6 +26,7 @@ pub enum FieldKind {
     Custom(CustomTypes),
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TextBased {
     SingleLineText,
     LongText,
@@ -34,10 +36,11 @@ pub enum TextBased {
     Url,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Numerical {
     Number,
-    Decimal { precision: u8, scale: u8 },
-    Percent { scale: u8 },
+    Decimal { precision: u8 },
+    Percent { precision: u8, as_a_progress: bool },
     Currency { currency: Currency },
 }
 
@@ -46,17 +49,20 @@ pub struct SelectOption {
     pub label: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SelectBased {
     SingleSelect { types: Vec<SelectOption> },
     MultipleSelect { types: Vec<SelectOption> },
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum RelationType {
     ManyToMany,
     HasMany,
     OneToOne,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AggregateFunction {
     Count,
     Max,
@@ -68,6 +74,7 @@ pub enum AggregateFunction {
     AvgDistinct,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum LinksBased {
     Link {
         relation: RelationType,
@@ -95,11 +102,13 @@ pub enum FileType {
     Other(String),
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum RatingIcon {
     Star,
     Circle,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CustomTypes {
     Attachement { file_type: FileType },
     CheckBox,
@@ -107,6 +116,7 @@ pub enum CustomTypes {
     Json,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum DateFormat {
     ISO, // 2026-01-27
@@ -114,11 +124,14 @@ pub enum DateFormat {
     EU,  // DD/MM/YYYY
     Custom(String),
 }
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TimeFormat {
     H24,
     H12,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum DateTimeBased {
     Date { format: DateFormat },
     Time { format: TimeFormat },
@@ -128,6 +141,7 @@ pub enum DateTimeBased {
     LastModifiedTime { date: DateFormat, time: TimeFormat },
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum UserBased {
     SingleUser,
     MultipleUsers,
