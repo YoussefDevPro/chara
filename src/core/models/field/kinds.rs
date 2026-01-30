@@ -55,9 +55,9 @@ pub enum RatingIcon {
 }
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct SelectOption {
-    id: u8,
-    label: String,
-    color: [u8; 6],
+    pub id: u8,
+    pub label: String,
+    pub color: [u8; 6],
 }
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub enum SelectConfig {

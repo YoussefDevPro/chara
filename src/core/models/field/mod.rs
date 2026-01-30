@@ -4,20 +4,23 @@ use ::serde::{Deserialize, Serialize};
 use surrealdb::sql::Datetime;
 
 mod kinds;
+mod migration;
+
+use crate::core::models::field::kinds::*;
 
 /// ['src/core/models/field.md']
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub struct Field {
-    id: Option<FieldId>,
-    created_at: Datetime,
-    updated_at: Datetime,
-    is_deleted: bool,
-    config: FieldConfig,
-    is_primary: bool,
-    is_nullable: bool,
-    is_unique: bool,
-    name: Name,
-    description: Option<String>,
+    pub id: Option<FieldId>,
+    pub created_at: Datetime,
+    pub updated_at: Datetime,
+    pub is_deleted: bool,
+    pub config: FieldConfig,
+    pub is_primary: bool,
+    pub is_nullable: bool,
+    pub is_unique: bool,
+    pub name: Name,
+    pub description: Option<String>,
 }
 
 pub struct InsertField {
@@ -62,6 +65,7 @@ impl Field {
         // apply the patch, we give to the service
         // the migration strategy to convert all of
         // those cells
+        // EDIT: i made a function for this that is accesible in FieldConfig
         if let Some(v) = patch.config {
             self.config = v;
         };

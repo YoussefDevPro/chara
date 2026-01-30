@@ -1,41 +1,31 @@
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::Thing;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct WorkspaceId(pub Thing);
+macro_rules! define_ids {
+    ($($name:ident),*) => {
+        $(
+            #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+            pub struct $name(pub Thing);
+        )*
+    };
+}
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct BaseId(pub Thing);
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct TableId(pub Thing);
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct UserId(pub Thing);
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct CellId(pub Thing);
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct RecordId(pub Thing);
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct FieldId(pub Thing);
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct RelationId(pub Thing);
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct IdentityId(pub Thing);
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct SessionId(pub Thing);
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct ViewId(pub Thing);
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct WorkspaceUserId(pub Thing);
+// Now you can define all of them at once:
+define_ids!(
+    WorkspaceId,
+    BaseId,
+    TableId,
+    UserId,
+    CellId,
+    RowId,
+    RecordId,
+    FieldId,
+    RelationId,
+    IdentityId,
+    SessionId,
+    ViewId,
+    WorkspaceUserId
+);
 
 pub trait Key {
     fn key(&self) -> String;
