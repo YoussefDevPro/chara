@@ -1,6 +1,6 @@
 use crate::core::models::ids::*;
 use ::serde::{Deserialize, Serialize};
-use iso_currency::{Currency, CurrencySymbol};
+use iso_currency::Currency;
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
 pub enum FieldConfig {
@@ -142,7 +142,7 @@ pub enum ComputedTypes {
     AutoNumber { prefix: Prefix, start_at: usize },
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 pub enum Prefix {
     Dot,
     Star,
