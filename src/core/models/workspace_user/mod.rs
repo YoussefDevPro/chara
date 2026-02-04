@@ -2,6 +2,7 @@ use crate::core::models::{ids::*, workspace_user::permissions::UserPermissions};
 use ::serde::{Deserialize, Serialize};
 use surrealdb::sql::Datetime;
 
+mod perm_methods;
 mod permissions;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
