@@ -6,6 +6,7 @@ use surrealdb::sql::Datetime;
 #[derive(Deserialize, Serialize)]
 pub struct Session {
     pub id: Option<SessionId>,
+    pub user: UserId,
     pub token: String,
     pub ip: String,
     pub user_agent: String,
@@ -15,9 +16,10 @@ pub struct Session {
 
 #[derive(Deserialize, Serialize)]
 pub struct InsertSession {
-    pub token: String,
-    pub ip: String,
-    pub user_agent: String,
+    pub(crate) user: UserId,
+    pub(crate) token: String,
+    pub(crate) ip: String,
+    pub(crate) user_agent: String,
 }
 
 // no session patch bc we're not supposed to change this at all
@@ -31,6 +33,7 @@ impl Session {
             user_agent: insert.user_agent,
             created_at: Datetime::from(chrono::Utc::now()),
             expires_at: Datetime::from(chrono::Utc::now() + Duration::days(3)), // hardened expiration :p
+            user: insert.user,
         }
     }
 }

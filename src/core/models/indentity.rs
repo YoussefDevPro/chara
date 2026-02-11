@@ -2,20 +2,6 @@ use crate::core::models::ids::*;
 use ::serde::{Deserialize, Serialize};
 use surrealdb::sql::*;
 
-// Identity linking a Hack Club external ID (HCID) to an internal UserId.
-//
-// This mapping is immutable for normal users and may only be modified by
-// administrators or internal system processes.
-//
-// Security invariants:
-// - Each HCID is globally unique
-// - Each HCID maps to exactly one UserId
-// - A UserId may be linked to at most one HCID
-//
-// This model is used exclusively for Hack Club OAuth.
-// User authentication after login relies on session tokens bound to
-// expiration, origin (IP / location), and device context.
-
 #[derive(Debug, thiserror::Error)]
 pub enum HcidError {
     #[error("invalid HCID format")]
