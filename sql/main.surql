@@ -77,3 +77,61 @@ VALUE time::now();
 DEFINE FIELD OVERWRITE is_deleted ON TABLE base TYPE bool 
 DEFAULT false;
 DEFINE FIELD OVERWRITE name ON TABLE base TYPE string;
+
+-- TABLE 
+DEFINE TABLE OVERWRITE table SCHEMAFULL;
+DEFINE FIELD OVERWRITE created_at ON TABLE table TYPE datetime 
+VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE updated_at ON TABLE table TYPE datetime
+VALUE time::now();
+DEFINE FIELD OVERWRITE is_deleted ON TABLE table TYPE bool 
+DEFAULT false;
+DEFINE FIELD OVERWRITE name ON TABLE base TYPE string;
+
+-- WORKSPACE |-relation-> BASE 
+DEFINE TABLE OVERWRITE have_base TYPE RELATION 
+    IN workspace 
+    OUT base 
+    SCHEMAFULL;
+
+DEFINE FIELD OVERWRITE created_at ON TABLE have_base TYPE datetime
+    VALUE time::now() READONLY;
+
+DEFINE FIELD OVERWRITE is_public ON TABLE have_base TYPE bool;
+
+-- BASE |-relation-> TABLE
+DEFINE TABLE OVERWRITE have_table TYPE RELATION 
+    IN base
+    OUT table
+    SCHEMAFULL;
+
+DEFINE FIELD OVERWRITE created_at ON TABLE have_table TYPE datetime
+    VALUE time::now() READONLY;
+
+DEFINE FIELD OVERWRITE is_public ON TABLE have_table TYPE bool;
+
+-- FIELD 
+DEFINE TABLE OVERWRITE field SCHEMAFULL;
+DEFINE FIELD OVERWRITE created_at ON TABLE field TYPE datetime 
+VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE updated_at ON TABLE field TYPE datetime
+VALUE time::now();
+DEFINE FIELD OVERWRITE is_deleted ON TABLE field TYPE bool 
+DEFAULT false;
+DEFINE FIELD OVERWRITE is_primary ON TABLE field TYPE bool
+DEFAULT true;
+DEFINE FIELD OVERWRITE is_nullable ON TABLE field TYPE bool;
+DEFINE FIELD OVERWRITE is_unique ON TABLE field TYPE bool;
+DEFINE FIELD OVERWRITE name ON TABLE field TYPE string;
+DEFINE FIELD OVERWRITE order ON TABLE field TYPE int;
+DEFINE FIELD OVERWRITE description ON TABLE field TYPE option<string>;
+DEFINE FIELD OVERWRITE config ON TABLE field TYPE object;
+
+-- RECORD 
+DEFINE TABLE OVERWRITE record SCHEMAFULL;
+DEFINE FIELD OVERWRITE created_at ON TABLE record TYPE datetime 
+VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE updated_at ON TABLE record TYPE datetime
+VALUE time::now();
+DEFINE FIELD OVERWRITE is_deleted ON TABLE record TYPE bool 
+DEFAULT false;
