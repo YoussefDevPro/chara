@@ -93,10 +93,8 @@ DEFINE TABLE OVERWRITE have_base TYPE RELATION
     IN workspace 
     OUT base 
     SCHEMAFULL;
-
 DEFINE FIELD OVERWRITE created_at ON TABLE have_base TYPE datetime
     VALUE time::now() READONLY;
-
 DEFINE FIELD OVERWRITE is_public ON TABLE have_base TYPE bool;
 
 -- BASE |-relation-> TABLE
@@ -104,10 +102,8 @@ DEFINE TABLE OVERWRITE have_table TYPE RELATION
     IN base
     OUT table
     SCHEMAFULL;
-
 DEFINE FIELD OVERWRITE created_at ON TABLE have_table TYPE datetime
     VALUE time::now() READONLY;
-
 DEFINE FIELD OVERWRITE is_public ON TABLE have_table TYPE bool;
 
 -- FIELD 
@@ -135,3 +131,37 @@ DEFINE FIELD OVERWRITE updated_at ON TABLE record TYPE datetime
 VALUE time::now();
 DEFINE FIELD OVERWRITE is_deleted ON TABLE record TYPE bool 
 DEFAULT false;
+
+-- CELL 
+DEFINE TABLE OVERWRITE cell SCHEMAFULL;
+DEFINE FIELD OVERWRITE created_at ON TABLE cell TYPE datetime
+VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE updated_at ON TABLE cell TYPE datetime 
+VALUE time::now();
+DEFINE FIELD OVERWRITE is_deleted ON TABLE cell TYPE bool 
+DEFAULT false;
+DEFINE FIELD OVERWRITE value ON TABLE cell TYPE object;
+
+-- RECORD & FIELD |-relation-> TABLE
+DEFINE TABLE OVERWRITE have_cell TYPE RELATION 
+    IN record | field
+    OUT cell
+    SCHEMAFULL;
+
+-- TABLE |-relation-> FIELD
+DEFINE TABLE OVERWRITE have_field TYPE RELATION 
+    IN table
+    OUT field
+    SCHEMAFULL;
+DEFINE FIELD OVERWRITE created_at ON TABLE have_field TYPE datetime
+    VALUE time::now() READONLY;
+
+-- TABLE |-relation-> RECORD 
+DEFINE TABLE OVERWRITE have_record TYPE RELATION 
+    IN table
+    OUT record
+    SCHEMAFULL;
+DEFINE FIELD OVERWRITE created_at ON TABLE have_record TYPE datetime
+    VALUE time::now() READONLY;
+
+

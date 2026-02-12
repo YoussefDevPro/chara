@@ -7,6 +7,8 @@ use surrealdb::sql::Datetime;
 mod cell;
 use crate::core::models::record::cell::*;
 
+// TODO: make a Cell struct separat
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Record {
     id: Option<RecordId>,
