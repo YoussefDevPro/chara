@@ -249,3 +249,11 @@ DEFINE TABLE OVERWRITE can_access_field TYPE RELATION
 DEFINE FIELD OVERWRITE perms ON TABLE can_access_field TYPE int;
 DEFINE INDEX OVERWRITE user_field_idx ON TABLE can_access_field FIELDS in, out UNIQUE;
 
+-- WORKSPACE_USER |-relation-> WORKSPACE_USER
+DEFINE TABLE OVERWRITE can_access_workspace_user TYPE RELATION 
+    IN workspace_user 
+    OUT field 
+    SCHEMAFULL;
+DEFINE FIELD OVERWRITE perms ON TABLE can_access_workspace_user TYPE int;
+DEFINE INDEX OVERWRITE user_workspace_user_idx ON TABLE can_access_workspace_user FIELDS in, out UNIQUE;
+

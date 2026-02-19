@@ -6,7 +6,7 @@ macro_rules! bitmask_serde {
             where
                 S: serde::Serializer,
             {
-                serializer.serialize_u8(self.mask)
+                serializer.serialize_u16(self.mask)
             }
         }
         impl<'de> serde::Deserialize<'de> for $ty {
@@ -14,12 +14,12 @@ macro_rules! bitmask_serde {
             where
                 D: serde::Deserializer<'de>,
             {
-                let mask = u8::deserialize(deserializer)?;
+                let mask = u16::deserialize(deserializer)?;
                 Ok($ty { mask })
             }
         }
-        impl From<u8> for $ty {
-            fn from(mask: u8) -> Self {
+        impl From<u16> for $ty {
+            fn from(mask: u16) -> Self {
                 $ty { mask }
             }
         }

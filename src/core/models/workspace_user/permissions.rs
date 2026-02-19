@@ -1,4 +1,4 @@
-use crate::{bitmask_serde, core::models::ids::*};
+use crate::bitmask_serde;
 use ::serde::{Deserialize, Serialize};
 
 // alr folks, im going to rewrite this
@@ -24,6 +24,8 @@ use ::serde::{Deserialize, Serialize};
 
 // btw welcome to my macro insanity lol
 
+// just realised how much insanity i put in this single file
+
 #[macro_export]
 macro_rules! relation {
     ( $( $x:ident ,$y:ident), * ) => {
@@ -35,7 +37,7 @@ macro_rules! relation {
 }
 
 bitmask! {
-    pub mask WorkspacePermissions: u8 where flags WorkspacePermission {
+    pub mask WorkspacePermissions: u16 where flags WorkspacePermission {
         Admin = 1 << 0,
         View = 1 << 1,
         Edit = 1 << 2,
@@ -48,10 +50,10 @@ bitmask! {
     }
 }
 bitmask_serde!(WorkspacePermissions);
-relation!(WorkspaceRelation, WorkspacePermissions);
+relation!(CanAccessWorkspace, WorkspacePermissions);
 
 bitmask! {
-    pub mask WorkspaceUserPermissions: u8 where flags WorkspaceUserPermission {
+    pub mask WorkspaceUserPermissions: u16 where flags WorkspaceUserPermission {
         Admin = 1 << 0,
         View = 1 << 1,
         Edit = 1 << 2,
@@ -64,10 +66,10 @@ bitmask! {
     }
 }
 bitmask_serde!(WorkspaceUserPermissions);
-relation!(WorkspaceUserRelation, WorkspaceUserPermissions);
+relation!(CanAccessWorkspaceUser, WorkspaceUserPermissions);
 
 bitmask! {
-    pub mask BasePermissions: u8 where flags BasePermission {
+    pub mask BasePermissions: u16 where flags BasePermission {
         Admin = 1 << 0,
         View = 1 << 1,
         Edit = 1 << 2,
@@ -80,10 +82,10 @@ bitmask! {
     }
 }
 bitmask_serde!(BasePermissions);
-relation!(BaseRelation, BasePermissions);
+relation!(CanAccessBase, BasePermissions);
 
 bitmask! {
-    pub mask TablePermissions: u8 where flags TablePermission {
+    pub mask TablePermissions: u16 where flags TablePermission {
         Admin = 1 << 0,
         View = 1 << 1,
         Edit = 1 << 2,
@@ -96,10 +98,10 @@ bitmask! {
     }
 }
 bitmask_serde!(TablePermissions);
-relation!(TableRelation, TablePermissions);
+relation!(CanAccessTable, TablePermissions);
 
 bitmask! {
-    pub mask FieldPermissions: u8 where flags FieldPermission {
+    pub mask FieldPermissions: u16 where flags FieldPermission {
         Admin = 1 << 0,
         View = 1 << 1,
         Edit = 1 << 2,
@@ -112,20 +114,4 @@ bitmask! {
     }
 }
 bitmask_serde!(FieldPermissions);
-relation!(FieldRelation, FieldPermissions);
-
-bitmask! {
-    pub mask RecordPermissions: u8 where flags RecordPermission {
-        Admin = 1 << 0,
-        View = 1 << 1,
-        Edit = 1 << 2,
-        Delete = 1 << 3,
-
-        Comment = 1 << 4,
-        Lock = 1 << 5,
-        // XXXXXX = 1 << 6,
-        // XXXXXX = 1 << 7
-    }
-}
-bitmask_serde!(RecordPermissions);
-relation!(RecordRelation, RecordPermissions);
+relation!(CanAccessField, FieldPermissions);
