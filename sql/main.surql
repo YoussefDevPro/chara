@@ -18,19 +18,21 @@ DEFINE FIELD OVERWRITE updated_at ON TABLE user TYPE datetime
 VALUE time::now();
 DEFINE FIELD OVERWRITE is_deleted ON TABLE user TYPE bool 
 DEFAULT false;
-DEFINE FIELD OVERWRITE first_name ON TABLE user TYPE string;
-DEFINE FIELD OVERWRITE last_name ON TABLE user TYPE string;
+DEFINE FIELD OVERWRITE first_name ON TABLE user TYPE string PERMISSIONS FOR select WHERE id = $user;
+DEFINE FIELD OVERWRITE last_name ON TABLE user TYPE string PERMISSIONS FOR select WHERE id = $user;
 DEFINE FIELD OVERWRITE email ON TABLE user TYPE string
-ASSERT string::is::email($value);
+ASSERT string::is_email($value);
 DEFINE FIELD OVERWRITE role ON TABLE user TYPE string 
 DEFAULT 'user'
 ASSERT $value INSIDE ['admin', 'user'];
 
 -- SESSION 
-DEFINE TABLE OVERWRITE session SCHEMAFULL;
+DEFINE TABLE OVERWRITE session SCHEMAFULL
+PERMISSIONS 
+    FOR select, update, delete NONE;
 DEFINE FIELD OVERWRITE token ON TABLE session TYPE string;
 DEFINE FIELD OVERWRITE ip ON TABLE session TYPE string
-ASSERT string::is::ip($value);
+ASSERT string::is_ip($value);
 DEFINE FIELD OVERWRITE user_agent ON TABLE session TYPE string;
 DEFINE FIELD OVERWRITE created_at ON TABLE session TYPE datetime
 VALUE time::now() READONLY;
@@ -40,7 +42,9 @@ DEFINE FIELD OVERWRITE user ON TABLE session TYPE record<user>;
 DEFINE INDEX OVERWRITE user_unique ON TABLE session FIELDS user UNIQUE;
 
 -- IDENTITY 
-DEFINE TABLE OVERWRITE identity SCHEMAFULL;
+DEFINE TABLE OVERWRITE identity SCHEMAFULL
+PERMISSIONS 
+    FOR select, update, delete NONE;
 DEFINE FIELD OVERWRITE created_at ON TABLE identity TYPE datetime 
 VALUE time::now() READONLY;
 DEFINE FIELD OVERWRITE updated_at ON TABLE identity TYPE datetime
@@ -55,14 +59,15 @@ DEFINE INDEX OVERWRITE external_id_unique ON TABLE identity FIELDS external_id U
 -- WORKSPACE 
 DEFINE TABLE OVERWRITE workspace SCHEMAFULL
 PERMISSIONS
-  -- View (1 << 1) 
-  FOR select WHERE fn::can(
-      (SELECT VALUE perm FROM can_access_workspace WHERE in.user = $auth.id AND out = $this.id)[0], 
+  -- Use a custom variable $user instead of $auth
+  FOR select WHERE is_deleted = false AND
+  fn::can(
+      (SELECT VALUE perms FROM can_access_workspace WHERE in.user = $user AND out = $this.id)[0], 
       2
   )
-  -- Edit (1 << 2)
-  FOR update WHERE fn::can(
-      (SELECT VALUE perm FROM can_access_workspace WHERE in.user = $auth.id AND out = $this.id)[0], 
+  FOR update WHERE is_deleted = false AND
+  fn::can(
+      (SELECT VALUE perms FROM can_access_workspace WHERE in.user = $user AND out = $this.id)[0], 
       4
   );
 DEFINE FIELD OVERWRITE created_at ON TABLE workspace TYPE datetime 
@@ -77,10 +82,10 @@ DEFINE FIELD OVERWRITE name ON TABLE workspace TYPE string;
 -- WORKSPACE USER 
 DEFINE TABLE OVERWRITE workspace_user SCHEMAFULL
 PERMISSIONS FOR select, update 
-WHERE user = $auth.id
-OR fn::bitwise::and(
+WHERE is_deleted = false AND user = $user
+OR is_deleted = false AND fn::bitwise::and(
     (SELECT VALUE perm FROM can_access_workspace 
-      WHERE in.user = $auth.id 
+      WHERE in.user = $user 
       AND out = $this.workspace_id
     )[0], 1
 ) == 1;
@@ -102,13 +107,15 @@ DEFINE INDEX OVERWRITE unique_user_per_workspace
 DEFINE TABLE OVERWRITE base SCHEMAFULL
 PERMISSIONS
   -- View (1 << 1) 
-  FOR select WHERE fn::can(
-      (SELECT VALUE perm FROM can_access_base WHERE in.user = $auth.id AND out = $this.id)[0], 
+  FOR select WHERE is_deleted = false AND 
+  fn::can(
+      (SELECT VALUE perm FROM can_access_base WHERE in.user = $user AND out = $this.id)[0], 
       2
   )
   -- Edit (1 << 2)
-  FOR update WHERE fn::can(
-      (SELECT VALUE perm FROM can_access_base WHERE in.user = $auth.id AND out = $this.id)[0], 
+  FOR update WHERE is_deleted = false AND
+  fn::can(
+      (SELECT VALUE perm FROM can_access_base WHERE in.user = $user AND out = $this.id)[0], 
       4
   );
 DEFINE FIELD OVERWRITE created_at ON TABLE base TYPE datetime 
@@ -123,13 +130,15 @@ DEFINE FIELD OVERWRITE name ON TABLE base TYPE string;
 DEFINE TABLE OVERWRITE table SCHEMAFULL
 PERMISSIONS
   -- View (1 << 1) 
-  FOR select WHERE fn::can(
-      (SELECT VALUE perm FROM can_access_table WHERE in.user = $auth.id AND out = $this.id)[0], 
+  FOR select WHERE is_deleted = false AND
+  fn::can(
+      (SELECT VALUE perm FROM can_access_table WHERE in.user = $user AND out = $this.id)[0], 
       2
   )
   -- Edit (1 << 2)
-  FOR update WHERE fn::can(
-      (SELECT VALUE perm FROM can_access_table WHERE in.user = $auth.id AND out = $this.id)[0], 
+  FOR update WHERE is_deleted = false AND
+  fn::can(
+      (SELECT VALUE perm FROM can_access_table WHERE in.user = $user AND out = $this.id)[0], 
       4
   );
 DEFINE FIELD OVERWRITE created_at ON TABLE table TYPE datetime 
@@ -162,13 +171,15 @@ DEFINE FIELD OVERWRITE is_public ON TABLE have_table TYPE bool;
 DEFINE TABLE OVERWRITE field SCHEMAFULL
 PERMISSIONS
   -- View (1 << 1) 
-  FOR select WHERE fn::can(
-      (SELECT VALUE perm FROM can_access_field WHERE in.user = $auth.id AND out = $this.id)[0], 
+  FOR select WHERE is_deleted = false AND
+  fn::can(
+      (SELECT VALUE perm FROM can_access_field WHERE in.user = $user AND out = $this.id)[0], 
       2
   )
   -- Edit (1 << 2)
-  FOR update WHERE fn::can(
-      (SELECT VALUE perm FROM can_access_field WHERE in.user = $auth.id AND out = $this.id)[0], 
+  FOR update WHERE is_deleted = false AND
+  fn::can(
+      (SELECT VALUE perm FROM can_access_field WHERE in.user = $user AND out = $this.id)[0], 
       4
   );
 DEFINE FIELD OVERWRITE created_at ON TABLE field TYPE datetime 
@@ -187,15 +198,26 @@ DEFINE FIELD OVERWRITE description ON TABLE field TYPE option<string>;
 DEFINE FIELD OVERWRITE config ON TABLE field TYPE object;
 
 -- RECORD 
-DEFINE TABLE OVERWRITE record SCHEMAFULL;
+DEFINE TABLE OVERWRITE record SCHEMAFULL
+PERMISSIONS
+    FOR select WHERE is_deleted = false AND
+    fn::can(
+        (SELECT VALUE perms FROM can_access_table WHERE in.user = $user AND out = $this.table)[0],
+        2
+    )
+    FOR update WHERE is_deleted = false AND
+    fn::can(
+        (SELECT VALUE perms FROM can_access_table WHERE in.user = $user AND out = $this.id.table)[0],
+        4
+    );
 DEFINE FIELD OVERWRITE created_at ON TABLE record TYPE datetime 
 VALUE time::now() READONLY;
 DEFINE FIELD OVERWRITE updated_at ON TABLE record TYPE datetime
 VALUE time::now();
 DEFINE FIELD OVERWRITE is_deleted ON TABLE record TYPE bool 
 DEFAULT false;
-DEFINE FIELD OVERWRITE cells ON TABLE record FLEXIBLE TYPE object
-ASSERT type::is::object($value);
+DEFINE FIELD OVERWRITE cells ON TABLE record TYPE object FLEXIBLE
+ASSERT type::is_object($value);
 DEFINE FIELD OVERWRITE table ON TABLE record TYPE record<table>;
 
 -- TABLE |-relation-> FIELD
