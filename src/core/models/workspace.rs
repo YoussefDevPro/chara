@@ -1,6 +1,6 @@
 use crate::core::models::{ids::*, user::Name};
 use ::serde::{Deserialize, Serialize};
-use surrealdb::sql::Datetime;
+use surrealdb::types::Datetime;
 
 // A Workspace represents a collaborative space owned by a single user.
 //

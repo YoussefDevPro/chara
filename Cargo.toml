@@ -13,7 +13,7 @@ rust-embed = "8.9.0"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.148"
 serde_with = "3.16.1"
-surrealdb = "2.4.0"
+surrealdb = "3.0.0"
 thiserror = "2.0.17"
 validator = "0.20.0"
 ordered-float = { version = "5.1.0", features = ["serde"] }
@@ -21,3 +21,7 @@ email_address = "0.2.9"
 uuid = { version = "1.20.0", features = ["v4"] }
 mime = "0.3.17"
 mime_serde_shim = "0.2.2"
+hackclub_auth_api = "0.1.1"
+dotenv = "0.15.0"
+dotenv_codegen = "0.15.0"
+surrealdb-types = "3.0.0"

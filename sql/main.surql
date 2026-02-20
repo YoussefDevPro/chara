@@ -53,6 +53,9 @@ DEFINE FIELD OVERWRITE is_deleted ON TABLE identity TYPE bool
 DEFAULT false;
 DEFINE FIELD OVERWRITE user ON TABLE identity TYPE record<user>;
 DEFINE FIELD OVERWRITE external_id ON TABLE identity TYPE string;
+DEFINE FIELD OVERWRITE access_token ON TABLE identity TYPE string;
+DEFINE FIELD OVERWRITE refresh_token ON TABLE identity TYPE string;
+DEFINE FIELD OVERWRITE expires_at ON TABLE identity TYPE datetime;
 DEFINE INDEX OVERWRITE user_unique ON TABLE identity FIELDS user UNIQUE;
 DEFINE INDEX OVERWRITE external_id_unique ON TABLE identity FIELDS external_id UNIQUE;
 

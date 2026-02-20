@@ -1,7 +1,7 @@
 use crate::core::models::ids::*;
 use ::serde::{Deserialize, Serialize};
 use email_address::EmailAddress;
-use surrealdb::sql::*;
+use surrealdb::types::*;
 
 // The User struct represents a global platform user.
 // Users are created with the User role by default.
@@ -16,7 +16,7 @@ pub enum NameError {
     InvalidCharacters,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, SurrealValue)]
 pub struct Name(String);
 // a name must be :
 // - ascii only
@@ -42,14 +42,14 @@ impl Name {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, SurrealValue)]
 #[serde(rename_all = "lowercase")]
 pub enum UserRole {
     User,
     Admin,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, SurrealValue)]
 pub struct User {
     pub id: Option<UserId>,
     pub created_at: Datetime,
@@ -57,7 +57,7 @@ pub struct User {
     pub is_deleted: bool,
     pub first_name: Name,
     pub last_name: Name,
-    pub email: EmailAddress,
+    pub email: String,
     pub role: UserRole,
 }
 
@@ -84,7 +84,7 @@ impl User {
             is_deleted: false,
             first_name: insert.first_name,
             last_name: insert.last_name,
-            email: insert.email,
+            email: insert.email.to_string(),
             role: UserRole::User,
         }
     }

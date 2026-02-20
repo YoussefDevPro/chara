@@ -1,11 +1,9 @@
-use std::cell::Cell;
-
 use crate::core::models::field::{AggregateFunction, LinkType, Prefix};
 use crate::core::models::ids::*;
 use iso_currency::CurrencySymbol;
 use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::{Datetime, Duration};
+use surrealdb::types::{Datetime, Duration};
 use thiserror::Error;
 use uuid::Uuid;
 use validator::ValidateLength;

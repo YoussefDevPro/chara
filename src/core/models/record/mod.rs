@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::core::models::ids::*;
 use ::serde::{Deserialize, Serialize};
-use surrealdb::sql::Datetime;
+use surrealdb::types::Datetime;
 
 mod cell;
 use crate::core::models::record::cell::*;

@@ -1,7 +1,7 @@
 use crate::core::models::ids::*;
 use ::serde::{Deserialize, Serialize};
 use chrono::Duration;
-use surrealdb::sql::Datetime;
+use surrealdb::types::Datetime;
 
 #[derive(Deserialize, Serialize)]
 pub struct Session {

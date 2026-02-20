@@ -1,6 +1,6 @@
 use crate::core::models::ids::*;
 use ::serde::{Deserialize, Serialize};
-use surrealdb::sql::Datetime;
+use surrealdb::types::Datetime;
 
 mod permissions;
 

@@ -1,6 +1,6 @@
 use crate::core::models::ids::*;
 use ::serde::{Deserialize, Serialize};
-use surrealdb::sql::*;
+use surrealdb::types::*;
 
 #[derive(Debug, thiserror::Error)]
 pub enum HcidError {

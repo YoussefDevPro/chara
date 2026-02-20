@@ -1,7 +1,7 @@
 use crate::core::models::ids::*;
 use crate::core::models::{field::kinds::FieldConfig, user::Name};
 use ::serde::{Deserialize, Serialize};
-use surrealdb::sql::Datetime;
+use surrealdb::types::Datetime;
 
 mod kinds;
 mod migration;

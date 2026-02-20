@@ -1,6 +1,6 @@
 use crate::core::models::{ids::*, user::Name};
 use ::serde::{Deserialize, Serialize};
-use surrealdb::sql::Datetime;
+use surrealdb::types::Datetime;
 
 // A Table represents a logical container within a Base.
 //
