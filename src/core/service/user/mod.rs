@@ -11,11 +11,15 @@
 // oooooooooh shit why did they changed so much stuff iiinn surreeaalllldddbbbb 333...0000
 // sooooooooooooooooooooooooooooooon:sob:
 
-use crate::core::db::{error::Error, DB};
-use crate::core::models::user::*;
+// make a function to get record id insteado f having to rerun this shit a million time
+
 use crate::HCAUTH;
+use crate::core::db::{DB, error::Error};
+use crate::core::models::identity::Identity;
+use crate::core::models::ids::UserId;
+use crate::core::models::session::Session;
+use crate::core::models::user::*;
 use surrealdb::opt::PatchOp;
-use surrealdb_types::RecordId;
 use thiserror::Error;
 
 pub struct SessionI {
@@ -50,7 +54,7 @@ pub struct UserService {
 
 impl UserService {
     pub async fn login(method: AuthMethod) -> Result<Self, Error> {
-        let ident: Option<crate::core::models::session::Session> = match method {
+        let user: Option<User> = match method {
             AuthMethod::HCA(token) => {
                 let auth_identity = HCAUTH
                     .get_identity(token)
@@ -62,7 +66,9 @@ impl UserService {
                     .bind(("external_id", auth_identity.identity.id))
                     .await?;
 
-                res.take(0)?
+                let ident: Option<Identity> = res.take(0)?;
+                let ident = ident.ok_or(Error::User(UserServiceError::UserNonExistant))?;
+                DB.select(ident.user.0).await?
             }
             AuthMethod::Session(session) => {
                 let mut res = DB
@@ -71,11 +77,11 @@ impl UserService {
                     .bind(("tokenn", session.token))
                     .bind(("user_agent",session.agent))
                     .await?;
-                res.take(0)?
+                let ident: Option<Session> = res.take(0)?;
+                let ident = ident.ok_or(Error::User(UserServiceError::UserNonExistant))?;
+                DB.select(ident.user.0).await?
             }
         };
-        let ident = ident.ok_or(Error::User(UserServiceError::UserNonExistant))?;
-        let user: Option<User> = DB.select(("user", ident.user.0.key)).await?;
 
         Ok(UserService {
             user: user.ok_or(Error::User(UserServiceError::UserNonExistant))?,
@@ -90,20 +96,20 @@ impl UserService {
         let mut res = DB
             .query(
                 "
-        LET $existing = (SELECT id FROM identity WHERE external_id = $ext_id LIMIT 1);
-        IF $existing[0].id = NONE THEN {
-            LET $u = (CREATE user CONTENT {
-                first_name: $first_name,
-                last_name: $last_name,
-                email: $email
-            });
-            CREATE identity CONTENT {
-                user: $u[0].id,
-                external_id: $ext_id,
-                access_token: $access_token
-            };
-        };
-    ",
+                LET $existing = (SELECT id FROM identity WHERE external_id = $ext_id LIMIT 1);
+                IF $existing[0].id = NONE THEN {
+                    LET $u = (CREATE user CONTENT {
+                        first_name: $first_name,
+                        last_name: $last_name,
+                        email: $email
+                    });
+                    CREATE identity CONTENT {
+                        user: $u[0].id,
+                        external_id: $ext_id,
+                        access_token: $access_token
+                    };
+                };
+            ",
             )
             .bind(("ext_id", auth_identity.identity.id))
             .bind(("first_name", auth_identity.identity.first_name))
@@ -120,6 +126,7 @@ impl UserService {
 
     pub async fn update_self_user(&mut self, mut patch: UserPatch) -> Result<User, Error> {
         if patch.is_deleted == Some(true) {
+            // a user cant delet itself
             patch.is_deleted = Some(false);
         }
 
@@ -129,8 +136,9 @@ impl UserService {
             .user
             .id
             .as_ref()
-            .map(|id| id.0.clone())
-            .ok_or(Error::User(UserServiceError::UserNonExistant))?;
+            .ok_or(Error::User(UserServiceError::UserNonExistant))?
+            .0
+            .clone();
 
         let user: Option<User> = DB
             .update(&record_id)
@@ -143,6 +151,51 @@ impl UserService {
             .await?;
 
         user.ok_or(Error::User(UserServiceError::UserNonExistant))
+    }
+
+    pub async fn delete_user(&mut self, user_id: &UserId) -> Result<User, Error> {
+        if self.is_admin().await.unwrap_or(false) {
+            return Err(Error::User(UserServiceError::NotEnoughPermission));
+        };
+        let record_id = user_id.0.clone();
+        let user: Option<User> = DB
+            .update(&record_id)
+            .patch(PatchOp::replace("/is_deleted", true))
+            .await?;
+
+        user.ok_or(Error::User(UserServiceError::UserNonExistant))
+    }
+
+    pub async fn refresh_user(&mut self) -> Result<User, Error> {
+        let user: Option<User> = DB
+            .select(
+                self.user
+                    .id
+                    .as_ref()
+                    .ok_or(Error::User(UserServiceError::UserNonExistant))?
+                    .0
+                    .clone(),
+            )
+            .await?;
+        let user = user.ok_or(Error::User(UserServiceError::UserNonExistant))?;
+        self.user = user.clone();
+        Ok(user)
+    }
+
+    pub async fn is_admin(&self) -> Result<bool, Error> {
+        let record_id = self
+            .user
+            .id
+            .as_ref()
+            .ok_or(Error::User(UserServiceError::UserNonExistant))?
+            .0
+            .clone();
+        let mut res = DB
+            .query("SELECT (role = 'admin') AS value FROM user WHERE id = $user;")
+            .bind(("user", record_id))
+            .await?;
+        let value: Option<IsAdmin> = res.take(0)?;
+        Ok(value.unwrap_or_default().value())
     }
 
     //pub async fn delete_user(&self) {}

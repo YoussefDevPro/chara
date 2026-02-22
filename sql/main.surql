@@ -81,6 +81,7 @@ DEFINE FIELD OVERWRITE is_deleted ON TABLE workspace TYPE bool
 DEFAULT false;
 DEFINE FIELD OVERWRITE owner ON TABLE workspace TYPE record<user>;
 DEFINE FIELD OVERWRITE name ON TABLE workspace TYPE string;
+DEFINE INDEX OVERWRITE unique_name_per_owner ON TABLE workspace FIELDS name, owner UNIQUE;
 
 -- WORKSPACE USER 
 DEFINE TABLE OVERWRITE workspace_user SCHEMAFULL

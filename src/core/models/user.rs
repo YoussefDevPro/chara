@@ -42,6 +42,17 @@ impl Name {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, SurrealValue, Default)]
+pub struct IsAdmin {
+    value: bool,
+}
+
+impl IsAdmin {
+    pub fn value(&self) -> bool {
+        self.value
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, SurrealValue)]
 #[serde(rename_all = "lowercase")]
 pub enum UserRole {
@@ -58,7 +69,7 @@ pub struct User {
     pub first_name: Name,
     pub last_name: Name,
     pub email: String,
-    pub role: String,
+    role: String,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
@@ -85,8 +96,7 @@ impl User {
             first_name: insert.first_name,
             last_name: insert.last_name,
             email: insert.email.to_string(),
-            role: String::new(),
-            //UserRole::User,
+            role: "user".to_string(),
         }
     }
 
@@ -101,5 +111,12 @@ impl User {
             self.last_name = v;
         };
         self.updated_at = Datetime::from(chrono::Utc::now());
+    }
+
+    pub fn role(&self) -> UserRole {
+        match self.role.as_str() {
+            "admin" => UserRole::Admin,
+            _ => UserRole::User,
+        }
     }
 }
