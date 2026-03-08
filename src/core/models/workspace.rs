@@ -1,6 +1,7 @@
 use crate::core::models::{ids::*, user::Name};
 use ::serde::{Deserialize, Serialize};
 use surrealdb::types::Datetime;
+use surrealdb_types::SurrealValue;
 
 // A Workspace represents a collaborative space owned by a single user.
 //
@@ -9,7 +10,7 @@ use surrealdb::types::Datetime;
 // This restriction is enforced at the service layer; the model itself
 // assumes that all applied patches have already been authorized.
 
-#[derive(Deserialize, Serialize, Debug, Clone, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, SurrealValue)]
 pub struct Workspace {
     pub id: Option<WorkspaceId>,
     pub created_at: Datetime,

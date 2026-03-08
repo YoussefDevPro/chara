@@ -2,7 +2,7 @@ use crate::core::models::ids::*;
 use ::serde::{Deserialize, Serialize};
 use surrealdb::types::Datetime;
 
-mod permissions;
+pub mod permissions;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]

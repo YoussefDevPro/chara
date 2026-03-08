@@ -18,6 +18,9 @@ use crate::core::models::identity::Identity;
 use crate::core::models::ids::UserId;
 use crate::core::models::session::Session;
 use crate::core::models::user::*;
+use crate::core::models::workspace::Workspace;
+use crate::core::models::workspace_user::permissions::WorkspacePermission;
+use crate::core::models::workspace_user::permissions::WorkspacePermissions;
 use crate::HCAUTH;
 use surrealdb::opt::PatchOp;
 use surrealdb_types::RecordId;
@@ -182,5 +185,46 @@ impl UserService {
             .await?;
         let value: Option<IsAdmin> = res.take(0)?;
         Ok(value.unwrap_or_default().value())
+    }
+
+    // make it return a user service instead
+    pub async fn create_workspace(&self, name: String) -> Result<Workspace, Error> {
+        let admin_perm = WorkspacePermissions::none().set(WorkspacePermission::Admin);
+
+        let mut res = DB
+            .query(
+                "
+                BEGIN TRANSACTION;
+                -- create the workspace
+                LET $ws = (CREATE workspace CONTENT {
+                    name: $name,
+                    owner: $user_id,
+                });
+
+                -- create the workspace_user entry for the owner
+                LET $ws_user = (CREATE workspace_user CONTENT {
+                    workspace_id: $ws[0].id,
+                    user: $user_id,
+                    username: $first_name -- defaulting to user's first name
+                });
+
+                -- create the permission relation (the graph edge)
+                RELATE $ws_user[0].id->can_access_workspace->$ws[0].id 
+                SET perms = $admin_perm;
+
+                COMMIT TRANSACTION;
+
+                -- return the created workspace
+                SELECT * FROM $ws[0].id;
+            ",
+            )
+            .bind(("name", name))
+            .bind(("user_id", self.user_record_id.clone()))
+            .bind(("first_name", self.user.first_name.clone()))
+            .bind(("admin_perm", admin_perm))
+            .await?;
+
+        let workspace: Option<Workspace> = res.take(0)?;
+        workspace.ok_or(Error::User(UserServiceError::BrokenToken))
     }
 }
