@@ -314,3 +314,5 @@ COMMIT TRANSACTION;",
 // i think useful ? but imagine u wanna open the app in a new tab, u cant do that then ...
 // hmmmmmmmmm
 // yeah ill just write it and enable it if we want to (by decommenting)
+// guess what im way too lazy if we ever need it then ill write it, now ima impl the workspace user
+// service to interact exclusivly inside a workspace
