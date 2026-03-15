@@ -1,4 +1,3 @@
-use crate::core::models::ids::UserId;
 use crate::core::models::user::{Name, UserPatch};
 use crate::core::service::user::{AuthMethod, SessionI, UserService};
 use crate::Root;
@@ -52,8 +51,8 @@ async fn test_user_service_lifecycle_ambitious() -> Result<(), Box<dyn std::erro
     bench!("Refresh User", service.refresh_user())?;
 
     let patch = UserPatch {
-        first_name: Some(Name::new("YouSafe".to_string()).unwrap()),
-        last_name: Some(Name::new("MRAOW".to_string()).unwrap()),
+        first_name: Some(Name::new("Y0USAF3".to_string()).unwrap()),
+        last_name: Some(Name::new("LM0UD3N".to_string()).unwrap()),
         is_deleted: None,
     };
     bench!("Update Self", service.update_self_user(patch))?;
@@ -64,7 +63,7 @@ async fn test_user_service_lifecycle_ambitious() -> Result<(), Box<dyn std::erro
     let ws_id = ws.id.unwrap().0;
     bench!("Delete Workspace", service.delete_workspace(ws_id))?;
 
-    let user_id = service.user_record_id.clone();
+    let user_id = service.id().clone();
     bench!("Delete User", service.delete_user(&user_id))?;
 
     println!("{}", "-".repeat(40));

@@ -1,10 +1,11 @@
 use crate::core::models::ids::*;
 use ::serde::{Deserialize, Serialize};
 use surrealdb::types::Datetime;
+use surrealdb::types::SurrealValue;
 
 pub mod permissions;
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, SurrealValue)]
 #[serde(rename_all = "lowercase")]
 pub enum WorkspaceUserRole {
     Guest,
@@ -13,7 +14,11 @@ pub enum WorkspaceUserRole {
     Owner, // only the owner can change permissions, admin can but cant give admin only permissions
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
+// so i forgot i wrote those user role thing, wich tbh makes stuff a bit cleaner, yeah, we can have
+// the relation and in the same time check if the workspace user is eligible to have those
+// permissions
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug, SurrealValue)]
 pub struct WorkspaceUser {
     pub id: Option<WorkspaceUserId>,
     pub created_at: Datetime,

@@ -27,9 +27,12 @@ DEFAULT 'user'
 ASSERT $value INSIDE ['admin', 'user'];
 
 -- SESSION 
-DEFINE TABLE OVERWRITE session SCHEMAFULL;
--- PERMISSIONS 
---     FOR select, update, delete NONE;
+DEFINE TABLE OVERWRITE session SCHEMAFULL
+PERMISSIONS
+        FOR select FULL
+        FOR create FULL
+        FOR update NONE
+        FOR delete FULL;
 DEFINE FIELD OVERWRITE token ON TABLE session TYPE string
     VALUE  crypto::argon2::generate($value);
 DEFINE FIELD OVERWRITE ip ON TABLE session TYPE string
@@ -105,6 +108,9 @@ DEFINE FIELD OVERWRITE workspace_id ON TABLE workspace_user TYPE record<workspac
 DEFINE FIELD OVERWRITE username ON TABLE workspace_user TYPE option<string> 
 VALUE $value OR user.first_name;
 DEFINE FIELD OVERWRITE user ON TABLE workspace_user TYPE record<user>;
+DEFINE FIELD OVERWRITE role ON TABLE workspace_user TYPE string
+DEFAULT 'guest'
+ASSERT $value INSIDE ['guest', 'user', 'admin', 'owner'];
 DEFINE INDEX OVERWRITE unique_user_per_workspace 
     ON TABLE workspace_user 
     FIELDS user, workspace_id UNIQUE;
