@@ -11,13 +11,7 @@
       pkgs = nixpkgs.legacyPackages."x86_64-linux";
     in
     {
-      packages."x86_64-linux".default = pkgs.rustPlatform.buildRustPackage {
-        name = "chara";
-        src = ./.;
-        nativeBuildInputs = [ pkgs.pkg-config ];
-        cargoHash = "sha256-YjZEh/uJNYzKI7iUZa/ruF5J0iL8onjr/+bHsNYJx5k=";
-        # buildInputs = [ if we ever need smt ];
-      };
+      packages."x86_64-linux".default = pkgs.callPackage ./default.nix { };
 
       devShells."x86_64-linux".default = pkgs.mkShell {
         buildInputs = with pkgs; [
