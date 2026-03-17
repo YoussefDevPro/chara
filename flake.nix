@@ -11,6 +11,14 @@
       pkgs = nixpkgs.legacyPackages."x86_64-linux";
     in
     {
+      packages."x86_64-linux".default = pkgs.rustPlatform.buildRustPackage {
+        name = "chara";
+        src = ./.;
+        nativeBuildInputs = [ pkgs.pkg-config ];
+        cargoHash = pkgs.lib.fakeHash;
+        # buildInputs = [ if we ever need smt ];
+      };
+
       devShells."x86_64-linux".default = pkgs.mkShell {
         buildInputs = with pkgs; [
           cargo
@@ -19,6 +27,7 @@
           clippy
           rust-analyzer
         ];
+        nativeBuildInputs = [ pkgs.pkg-config ];
         env.RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
       };
     };
