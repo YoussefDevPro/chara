@@ -19,7 +19,7 @@
     {
       # packages."x86_64-linux".default = pkgs.callPackage ./default.nix { };
       packages."x86_64-linux".default = naerskLib.buildPackage {
-        srs = ./.;
+        src = ./.;
         nativeBuildInputs = [ pkgs.pkg-config ];
       };
 
