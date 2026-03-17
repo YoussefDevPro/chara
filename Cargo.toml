@@ -3,6 +3,12 @@ name = "chara"
 version = "0.1.0"
 edition = "2024"
 
+[profile.debug]
+opt-level = 3
+
+[profile.release]
+opt-level = 3
+
 [dependencies]
 axum = "0.8.8"
 bitmask = "0.5.0"
