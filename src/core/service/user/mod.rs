@@ -16,13 +16,13 @@ use super::errors::*;
 use crate::core::models::base::{Base, InsertBase};
 use crate::core::models::ids::{BaseId, UserId};
 use crate::core::models::user::*;
+use crate::core::service::base::BaseService;
 use crate::core::{
     db::{error::Error, DB},
     service::crypter::encrypt_token,
 };
 use crate::HCAUTH;
 use surrealdb::opt::PatchOp;
-use surrealdb::types::RecordId;
 
 pub struct SessionI {
     pub token: String,
@@ -31,7 +31,7 @@ pub struct SessionI {
 }
 
 pub enum AuthMethod {
-    HCA(String),
+    Hca(String),
     Session(SessionI),
 }
 
@@ -39,6 +39,7 @@ pub enum AuthMethod {
 pub struct UserService {
     pub user: User,
     user_record_id: UserId,
+    pub current_base: Option<BaseService>,
 }
 
 impl UserService {
@@ -48,7 +49,7 @@ impl UserService {
 
     pub async fn login(method: AuthMethod) -> Result<Self, Error> {
         let user: User = match method {
-            AuthMethod::HCA(token) => {
+            AuthMethod::Hca(token) => {
                 let auth_identity = HCAUTH
                     .get_identity(token)
                     .await
@@ -90,6 +91,7 @@ impl UserService {
         Ok(UserService {
             user,
             user_record_id: UserId(record_id),
+            current_base: None,
         })
     }
 
@@ -146,6 +148,7 @@ COMMIT TRANSACTION;
         Ok(UserService {
             user,
             user_record_id: record_id,
+            current_base: None,
         })
     }
 
@@ -230,7 +233,7 @@ COMMIT TRANSACTION;",
     }
 
     pub async fn delete_base(&self, base: BaseId) -> Result<(), Error> {
-        let mut res = DB
+        let res = DB
             .query(
                 "
             BEGIN TRANSACTION;
@@ -244,7 +247,7 @@ COMMIT TRANSACTION;",
             IF count($authorized) == 0 {
                 THROW 'Unauthorized: Only the owner or an admin can delete this base.';
             };
-
+ 
             DELETE $base;
             
             COMMIT TRANSACTION;
@@ -257,7 +260,11 @@ COMMIT TRANSACTION;",
         Ok(())
     }
 
-    //pub async fn update_base(&self, base: BaseId) -> Result<Base, Error> {}
+    pub async fn open_base(&mut self, base: BaseId) -> Result<Base, Error> {
+        let service = BaseService::new(base, self.user_record_id.clone()).await?;
+        self.current_base = Some(service.clone());
+        Ok(service.base)
+    }
 }
 
 // ok, i gotta learn how argon2 works again, dam i forgot how it works its been like, 6months or

@@ -109,6 +109,7 @@ VALUE time::now();
 DEFINE FIELD OVERWRITE is_deleted ON TABLE table TYPE bool 
 DEFAULT false;
 DEFINE FIELD OVERWRITE name ON TABLE table TYPE string;
+DEFINE FIELD OVERWRITE base ON TABLE table TYPE record<base>;
 
 
 -- FIELD 
@@ -164,15 +165,6 @@ DEFAULT false;
 DEFINE FIELD OVERWRITE cells ON TABLE record TYPE object FLEXIBLE
 ASSERT type::is_object($value);
 DEFINE FIELD OVERWRITE table ON TABLE record TYPE record<table>;
-
--- BASE |-relation-> TABLE
-DEFINE TABLE OVERWRITE have_table TYPE RELATION 
-    IN base
-    OUT table
-    SCHEMAFULL;
-DEFINE FIELD OVERWRITE created_at ON TABLE have_table TYPE datetime
-    VALUE time::now() READONLY;
-DEFINE FIELD OVERWRITE is_public ON TABLE have_table TYPE bool;
 
 
 -- USER |-relation-> BASE

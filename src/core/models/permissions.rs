@@ -47,7 +47,8 @@ bitmask! {
         ManageTables = 1 << 4,
         ManageViews = 1 << 5,
         ManagerUserPermissions = 1 << 6,
-        ManageAutomatisations = 1 << 7
+        ManageAutomatisations = 1 << 7,
+        ManageInvitations = 1 << 8,
     }
 }
 bitmask_serde!(BasePermissions);
