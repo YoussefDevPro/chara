@@ -33,9 +33,9 @@ async fn test_user_service_lifecycle_ambitious() -> Result<(), Box<dyn std::erro
     })
     .await?;
 
-    DB.use_ns("main").use_db("test").await?;
+    DB.use_ns("main").use_db("main").await?;
 
-    println!("\n---             Service Test             ---");
+    println!("\n---             User Service Test             ---");
     println!("{:<23} | {:>12}", "Operation", "Latency");
     println!("{}", "-".repeat(40));
 
@@ -94,8 +94,51 @@ async fn test_user_service_lifecycle_ambitious() -> Result<(), Box<dyn std::erro
     let dummy_id = dummy_user.id.clone().unwrap();
     bench!("Delete Other User", service.delete_user(&dummy_id))?;
 
+    let base = bench!("Create Base", service.create_base("TestBase".to_string()))?;
+    let base_id = base.id.clone().unwrap();
+
+    // 2. Open Base
+    bench!("Open Base", service.open_base(base_id.clone()))?;
+    let base_service = service.current_base.as_ref().unwrap();
+
+    // 3. Create Table
+    let table = bench!(
+        "Create Table",
+        base_service.create_table("TestTable".to_string())
+    )?;
+    let table_id = table.id.clone().unwrap();
+
+    // 4. Invite User
+    let dummy_user: crate::core::models::user::User = DB
+        .create("user")
+        .content(crate::core::models::user::User::from_insert(
+            crate::core::models::user::InsertUser {
+                first_name: Name::new("Guest".to_string()).unwrap(),
+                last_name: Name::new("User".to_string()).unwrap(),
+                email: "guest@example.com".parse().unwrap(),
+            },
+        ))
+        .await?
+        .unwrap();
+    let guest_id = dummy_user.id.clone().unwrap();
+
+    // View (1 << 1) | ManageInvitations (1 << 8) = 2 + 256 = 258
+    bench!(
+        "Invite User",
+        base_service.invite_user(guest_id, 258.into())
+    )?;
+
+    // 5. Open Table
+    bench!("Open Table", base_service.open_table(table_id.clone()))?;
+
+    // 6. Delete Table
+    bench!("Delete Table", base_service.delete_table(table_id))?;
+
+    // 7. Delete Base
+    bench!("Delete Base", base_service.delete())?;
+
     println!("{}", "-".repeat(40));
-    println!("Test Suite Complete.\n");
+    println!("User Service Test Suite Complete.\n");
 
     Ok(())
 }

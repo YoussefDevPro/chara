@@ -53,7 +53,7 @@ COMMIT TRANSACTION;
             .bind(("base", base_id.clone()))
             .bind(("user", user.clone()))
             .await?;
-        let base: Base = res.take::<Option<Base>>(7)?.ok_or(Error::Database(
+        let base: Base = res.take::<Option<Base>>(4)?.ok_or(Error::Database(
             super::errors::DatabaseError::QueryFailed(format!("{}:{}", file!(), line!())),
         ))?;
         Ok(Self {
@@ -113,7 +113,8 @@ COMMIT TRANSACTION;
     .bind(("base", self.base_record_id.clone()))
     .bind(("user", self.user.clone()))
     .await?;
-        let base: Option<Base> = res.take(8)?;
+
+        let base: Option<Base> = res.take(5)?;
         let base = base.ok_or(Error::Database(
             super::errors::DatabaseError::TransactionFailed(format!("{}:{}", file!(), line!())),
         ))?;
@@ -151,7 +152,7 @@ COMMIT TRANSACTION;
         .bind(("name", name))
         .await?;
 
-        let table: Table = res.take::<Option<Table>>(3)?.ok_or(Error::Database(
+        let table: Table = res.take::<Option<Table>>(6)?.ok_or(Error::Database(
             super::errors::DatabaseError::QueryFailed("Failed to create table".into()),
         ))?;
         Ok(table)
