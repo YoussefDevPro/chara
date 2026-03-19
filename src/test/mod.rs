@@ -33,7 +33,7 @@ async fn test_user_service_lifecycle_ambitious() -> Result<(), Box<dyn std::erro
     })
     .await?;
 
-    DB.use_ns("main").use_db("main").await?;
+    DB.use_ns("main").use_db("test").await?;
 
     println!("\n---             Service Test             ---");
     println!("{:<23} | {:>12}", "Operation", "Latency");
@@ -51,16 +51,48 @@ async fn test_user_service_lifecycle_ambitious() -> Result<(), Box<dyn std::erro
     bench!("Refresh User", service.refresh_user())?;
 
     let patch = UserPatch {
-        first_name: Some(Name::new("Y0USAF3".to_string()).unwrap()),
-        last_name: Some(Name::new("LM0UD3N".to_string()).unwrap()),
+        first_name: Some(Name::new("YOUSAFE".to_string()).unwrap()),
+        last_name: Some(Name::new("LMOUDEN".to_string()).unwrap()),
         is_deleted: None,
     };
     bench!("Update Self", service.update_self_user(patch))?;
 
     bench!("Is Admin Check", service.is_admin())?;
 
-    let user_id = service.id().clone();
-    bench!("Delete User", service.delete_user(&user_id))?;
+    // Verify Self-Deletion Prevention
+    let self_id = service.id().clone();
+    match service.delete_user(&self_id).await {
+        Ok(_) => {
+            eprintln!(
+                "󰳤 {:<20} | FAILED (Expected CannotDeleteSelf, got Ok)",
+                "Self Delete"
+            );
+            return Err("Expected CannotDeleteSelf error".into());
+        }
+        Err(_) => {
+            println!(
+                " {:<20} | Success (Correctly caught self-deletion)",
+                "Self Delete Check"
+            );
+        }
+    }
+
+    // Verify Deletion of Another User
+    // Create a dummy user directly in DB to test deletion
+    let dummy_user: crate::core::models::user::User = DB
+        .create("user")
+        .content(crate::core::models::user::User::from_insert(
+            crate::core::models::user::InsertUser {
+                first_name: Name::new("Dummy".to_string()).unwrap(),
+                last_name: Name::new("User".to_string()).unwrap(),
+                email: "dummy@example.com".parse().unwrap(),
+            },
+        ))
+        .await?
+        .unwrap();
+
+    let dummy_id = dummy_user.id.clone().unwrap();
+    bench!("Delete Other User", service.delete_user(&dummy_id))?;
 
     println!("{}", "-".repeat(40));
     println!("Test Suite Complete.\n");

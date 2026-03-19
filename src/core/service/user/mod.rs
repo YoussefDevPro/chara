@@ -170,31 +170,24 @@ COMMIT TRANSACTION;
     pub async fn delete_user(&mut self, user_id: &UserId) -> Result<User, Error> {
         if self.user_record_id == *user_id {
             return Err(Error::User(UserError::CannotDeleteSelf));
-        } else if !self.is_admin().await.unwrap_or(false) {
+        } else if !self.is_admin().await? {
             return Err(Error::Permission(PermissionError::AdminRequired));
         };
 
         let user: Option<User> = DB
             .query(
                 "
-LET $is_admin = array::first(
-    SELECT role
-    FROM user
-    WHERE id = $user_id
-    AND role = 'admin'
-    AND is_deleted = false
-);
-IF $is_admin.role != 'admin' THEN
-    THROW 'Not admin'
-END;
+BEGIN TRANSACTION;
+LET $caller = (SELECT role FROM user WHERE id = $self_id AND is_deleted = false)[0];
+IF $caller.role != 'admin' THEN THROW 'Unauthorized: Admin privileges required' END;
 IF $self_id == $user_id THEN THROW 'Cannot delete self' END;
-UPDATE $user_id SET is_deleted = true;
+UPDATE $user_id SET is_deleted = true RETURN AFTER;
 COMMIT TRANSACTION;",
             )
             .bind(("self_id", self.user_record_id.clone()))
             .bind(("user_id", user_id.0.clone()))
             .await?
-            .take(5)?;
+            .take(4)?;
 
         user.ok_or(Error::User(UserError::NotFound))
     }
