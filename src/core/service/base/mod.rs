@@ -14,6 +14,7 @@ pub struct BaseService {
     pub base: Base,
     pub user: UserId,
     base_record_id: BaseId,
+    pub current_table: Option<TableService>,
 }
 
 impl BaseService {
@@ -59,6 +60,7 @@ COMMIT TRANSACTION;
             base,
             base_record_id: base_id,
             user,
+            current_table: None,
         })
     }
 
@@ -76,7 +78,7 @@ IF !$is_owner AND !fn::can($inviter_perms, 258) {
 };
 
 RELATE $invited_id->can_access_base->$target_base 
-    SET perms = $requested_perms;
+    SET perms = $perms;
 
 COMMIT TRANSACTION;
             ")
@@ -184,30 +186,9 @@ COMMIT TRANSACTION;
     }
 
     pub async fn open_table(&self, table_id: TableId) -> Result<TableService, Error> {
-        let mut res = DB.query("
-            LET $is_owner = (SELECT VALUE owner FROM $base)[0] == $user;
-            
-            SELECT * FROM $table_id WHERE is_deleted = false AND (
-                $is_owner OR 
-                fn::can(
-                    (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $this.id)[0], 
-                    2
-                )
-            );
-        ")
-        .bind(("user", self.user.clone()))
-        .bind(("base", self.base_record_id.clone()))
-        .bind(("table_id", table_id.clone()))
-        .await?;
+        let service =
+            TableService::new(table_id, self.base_record_id.clone(), self.user.clone()).await?;
 
-        let table: Table = res.take::<Option<Table>>(1)?.ok_or(Error::Database(
-            super::errors::DatabaseError::QueryFailed("Table not found or Access Denied".into()),
-        ))?;
-
-        Ok(TableService::new(
-            table,
-            self.base_record_id.clone(),
-            self.user.clone(),
-        ))
+        Ok(service)
     }
 }
