@@ -1,8 +1,26 @@
 use std::sync::LazyLock;
 use surrealdb::engine::remote::ws::Client;
+use surrealdb::engine::remote::ws::Ws;
+use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
 
 pub static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init);
+
+pub async fn init() {
+    DB.connect::<Ws>(env!("DB_URL")).await.unwrap();
+
+    DB.signin(Root {
+        username: env!("DB_USERNAME"),
+        password: env!("DB_PASSWORD"),
+    })
+    .await
+    .unwrap();
+
+    DB.use_ns(env!("DB_NAMESPACE"))
+        .use_db("main")
+        .await
+        .unwrap();
+}
 
 pub mod error {
     use crate::core::service::errors::*;
@@ -49,7 +67,9 @@ pub mod error {
                 Self::User(UserError::NotFound)
                 | Self::Base(BaseError::NotFound)
                 | Self::Table(TableError::NotFound) => (StatusCode::NOT_FOUND, self.to_string()),
-                Self::User(UserError::CannotActionSelf) => (StatusCode::BAD_REQUEST, self.to_string()),
+                Self::User(UserError::CannotActionSelf) => {
+                    (StatusCode::BAD_REQUEST, self.to_string())
+                }
                 _ => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
             };
 
