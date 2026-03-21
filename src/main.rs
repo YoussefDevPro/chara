@@ -11,6 +11,7 @@ use leptos_axum::*;
 use chara::*;
 use leptos::prelude::*;
 
+#[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
     core::db::init().await;
