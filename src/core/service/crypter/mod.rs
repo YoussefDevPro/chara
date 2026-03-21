@@ -1,9 +1,6 @@
 use crate::core::service::errors::EncryptionError;
 use crate::MASTER_KEY;
-use chacha20poly1305::{
-    aead::{Aead, AeadCore, KeyInit, OsRng},
-    ChaCha20Poly1305, Nonce,
-};
+use crate::*;
 
 pub async fn encrypt_token(token: &str) -> Result<Vec<u8>, EncryptionError> {
     let cipher = ChaCha20Poly1305::new(&MASTER_KEY);

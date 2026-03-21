@@ -1,6 +1,4 @@
-use crate::bitmask_serde;
-use ::serde::{Deserialize, Serialize};
-use surrealdb::types::SurrealValue;
+use crate::*;
 
 // alr folks, im going to rewrite this
 // * do nothing *

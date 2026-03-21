@@ -1,13 +1,7 @@
-use crate::core::{
-    db::{error::Error, DB},
-    models::{
-        base::Base,
-        ids::{BaseId, TableId, UserId},
-        permissions::BasePermissions,
-        table::Table,
-    },
-    service::{errors::*, table::TableService},
-};
+use crate::core::models::*;
+use crate::core::service::*;
+use crate::core::DB;
+use crate::*;
 
 #[derive(Debug, Clone)]
 pub struct BaseService {
@@ -22,7 +16,7 @@ impl BaseService {
         &self.base_record_id
     }
 
-    pub async fn new(base_id: BaseId, user: UserId) -> Result<Self, Error> {
+    pub async fn new(base_id: BaseId, user: UserId) -> Result<Self, Irror> {
         let mut res = DB
             .query(
                 "
@@ -62,7 +56,7 @@ COMMIT TRANSACTION;
         })
     }
 
-    pub async fn invite_user(&self, user: UserId, perms: BasePermissions) -> Result<(), Error> {
+    pub async fn invite_user(&self, user: UserId, perms: BasePermissions) -> Result<(), Irror> {
         let res = DB.query("
             BEGIN TRANSACTION;
 
@@ -88,7 +82,7 @@ COMMIT TRANSACTION;
         Ok(())
     }
 
-    pub async fn delete(&self) -> Result<Base, Error> {
+    pub async fn delete(&self) -> Result<Base, Irror> {
         let mut res = DB.query("
         BEGIN TRANSACTION;
 
@@ -118,7 +112,7 @@ COMMIT TRANSACTION;
         Ok(base)
     }
 
-    pub async fn create_table(&self, name: String) -> Result<Table, Error> {
+    pub async fn create_table(&self, name: String) -> Result<Table, Irror> {
         let mut res = DB.query("
             BEGIN TRANSACTION;
 
@@ -148,11 +142,13 @@ COMMIT TRANSACTION;
         .bind(("name", name))
         .await?;
 
-        let table: Table = res.take::<Option<Table>>(6)?.ok_or(TableError::CreateFailed)?;
+        let table: Table = res
+            .take::<Option<Table>>(6)?
+            .ok_or(TableError::CreateFailed)?;
         Ok(table)
     }
 
-    pub async fn delete_table(&self, table_id: TableId) -> Result<(), Error> {
+    pub async fn delete_table(&self, table_id: TableId) -> Result<(), Irror> {
         let res = DB.query("
             BEGIN TRANSACTION;
 
@@ -180,7 +176,7 @@ COMMIT TRANSACTION;
         Ok(())
     }
 
-    pub async fn open_table(&self, table_id: TableId) -> Result<TableService, Error> {
+    pub async fn open_table(&self, table_id: TableId) -> Result<TableService, Irror> {
         let service =
             TableService::new(table_id, self.base_record_id.clone(), self.user.clone()).await?;
 

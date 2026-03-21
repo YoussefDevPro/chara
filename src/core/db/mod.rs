@@ -1,22 +1,18 @@
-use std::sync::LazyLock;
-use surrealdb::engine::remote::ws::Client;
-use surrealdb::engine::remote::ws::Ws;
-use surrealdb::opt::auth::Root;
-use surrealdb::Surreal;
+use crate::*;
 
 pub static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init);
 
 pub async fn init() {
-    DB.connect::<Ws>(env!("DB_URL")).await.unwrap();
+    DB.connect::<Ws>(dotenv!("DB_URL")).await.unwrap();
 
     DB.signin(Root {
-        username: env!("DB_USERNAME"),
-        password: env!("DB_PASSWORD"),
+        username: dotenv!("DB_USERNAME").to_string(),
+        password: dotenv!("DB_PASSWORD").to_string(),
     })
     .await
     .unwrap();
 
-    DB.use_ns(env!("DB_NAMESPACE"))
+    DB.use_ns(dotenv!("DB_NAMESPACE"))
         .use_db("main")
         .await
         .unwrap();
@@ -33,7 +29,7 @@ pub mod error {
     use thiserror::Error;
 
     #[derive(Error, Debug)]
-    pub enum Error {
+    pub enum Irror {
         #[error("database error: {0}")]
         Db(String),
 
@@ -59,7 +55,7 @@ pub mod error {
         Table(#[from] TableError),
     }
 
-    impl IntoResponse for Error {
+    impl IntoResponse for Irror {
         fn into_response(self) -> Response {
             let (status, message) = match self {
                 Self::Auth(_) => (StatusCode::UNAUTHORIZED, self.to_string()),
@@ -82,14 +78,14 @@ pub mod error {
         }
     }
 
-    impl From<surrealdb::Error> for Error {
+    impl From<surrealdb::Error> for Irror {
         fn from(error: surrealdb::Error) -> Self {
             eprintln!("{error:?}");
             Self::Db(error.to_string())
         }
     }
 
-    impl From<EncryptionErr> for Error {
+    impl From<EncryptionErr> for Irror {
         fn from(error: EncryptionErr) -> Self {
             eprintln!("{error:?}");
             Self::Encryption(EncryptionError::EncryptionFailed)

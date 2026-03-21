@@ -12,17 +12,11 @@
 // sooooooooooooooooooooooooooooooon:sob:
 
 // make a function to get record id insteado f having to rerun this shit a million time
-use super::errors::*;
-use crate::core::models::base::{Base, InsertBase};
-use crate::core::models::ids::{BaseId, UserId};
-use crate::core::models::user::*;
-use crate::core::service::base::BaseService;
-use crate::core::{
-    db::{error::Error, DB},
-    service::crypter::encrypt_token,
-};
-use crate::HCAUTH;
-use surrealdb::opt::PatchOp;
+use crate::core::models::*;
+use crate::core::service::crypter::*;
+use crate::core::service::*;
+use crate::core::DB;
+use crate::*;
 
 pub struct SessionI {
     pub token: String,
@@ -47,7 +41,7 @@ impl UserService {
         &self.user_record_id
     }
 
-    pub async fn login(method: AuthMethod) -> Result<Self, Error> {
+    pub async fn login(method: AuthMethod) -> Result<Self, Irror> {
         let user: User = match method {
             AuthMethod::Hca(token) => {
                 let auth_identity = HCAUTH
@@ -95,16 +89,14 @@ impl UserService {
         })
     }
 
-    pub async fn register(token: String) -> Result<UserService, Error> {
+    pub async fn register(token: String) -> Result<UserService, Irror> {
         let auth_identity = HCAUTH.get_identity(token.clone());
         let encrypted_token = encrypt_token(&token);
 
         let auth_identity = auth_identity
             .await
             .map_err(|_| AuthError::VerificationFailed)?;
-        let encrypted_token = encrypted_token
-            .await
-            .map_err(|_| AuthError::InvalidToken)?;
+        let encrypted_token = encrypted_token.await.map_err(|_| AuthError::InvalidToken)?;
 
         let mut res = DB
             .query(
@@ -137,13 +129,7 @@ COMMIT TRANSACTION;
             .await?;
         let user: Option<User> = res.take(0)?;
         let user = user.ok_or(UserError::NotFound)?;
-        let record_id = UserId(
-            user.id
-                .as_ref()
-                .ok_or(UserError::NotFound)?
-                .0
-                .clone(),
-        );
+        let record_id = UserId(user.id.as_ref().ok_or(UserError::NotFound)?.0.clone());
 
         Ok(UserService {
             user,
@@ -152,7 +138,7 @@ COMMIT TRANSACTION;
         })
     }
 
-    pub async fn update_self_user(&mut self, patch: UserPatch) -> Result<User, Error> {
+    pub async fn update_self_user(&mut self, patch: UserPatch) -> Result<User, Irror> {
         self.user.apply_patch(patch.clone());
 
         let user: Option<User> = DB
@@ -167,7 +153,7 @@ COMMIT TRANSACTION;
         user.ok_or(UserError::UpdateFailed(format!("{patch:?}")).into())
     }
 
-    pub async fn delete_user(&mut self, user_id: &UserId) -> Result<User, Error> {
+    pub async fn delete_user(&mut self, user_id: &UserId) -> Result<User, Irror> {
         if self.user_record_id == *user_id {
             return Err(UserError::CannotActionSelf.into());
         } else if !self.is_admin().await? {
@@ -192,7 +178,7 @@ COMMIT TRANSACTION;",
         user.ok_or(UserError::NotFound.into())
     }
 
-    pub async fn refresh_user(&mut self) -> Result<User, Error> {
+    pub async fn refresh_user(&mut self) -> Result<User, Irror> {
         let user: Option<User> = DB
             .query("SELECT * FROM user WHERE id = $id AND is_deleted = false")
             .bind(("id", self.user_record_id.clone()))
@@ -203,7 +189,7 @@ COMMIT TRANSACTION;",
         Ok(user)
     }
 
-    pub async fn is_admin(&self) -> Result<bool, Error> {
+    pub async fn is_admin(&self) -> Result<bool, Irror> {
         let mut res = DB
             .query("SELECT (role = 'admin') AS value FROM user WHERE id = $user;")
             .bind(("user", self.user_record_id.clone()))
@@ -212,7 +198,7 @@ COMMIT TRANSACTION;",
         Ok(value.unwrap_or_default().value())
     }
 
-    pub async fn create_base(&self, name: String) -> Result<Base, Error> {
+    pub async fn create_base(&self, name: String) -> Result<Base, Irror> {
         let base = InsertBase {
             name: Name(name),
             owner: self.user_record_id.clone(),
@@ -221,7 +207,7 @@ COMMIT TRANSACTION;",
         res.ok_or(BaseError::CreateFailed.into())
     }
 
-    pub async fn delete_base(&self, base: BaseId) -> Result<(), Error> {
+    pub async fn delete_base(&self, base: BaseId) -> Result<(), Irror> {
         let res = DB
             .query(
                 "
@@ -249,7 +235,7 @@ COMMIT TRANSACTION;",
         Ok(())
     }
 
-    pub async fn open_base(&mut self, base: BaseId) -> Result<Base, Error> {
+    pub async fn open_base(&mut self, base: BaseId) -> Result<Base, Irror> {
         let service = BaseService::new(base, self.user_record_id.clone()).await?;
         self.current_base = Some(service.clone());
         Ok(service.base)

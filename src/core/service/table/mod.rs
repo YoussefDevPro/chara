@@ -1,11 +1,7 @@
-use crate::core::{
-    db::{DB, error::Error},
-    models::{
-        ids::{BaseId, TableId, UserId},
-        table::Table,
-    },
-    service::errors::TableError,
-};
+use crate::core::models::*;
+use crate::core::service::*;
+use crate::core::*;
+use crate::*;
 
 #[derive(Debug, Clone)]
 pub struct TableService {
@@ -16,7 +12,7 @@ pub struct TableService {
 }
 
 impl TableService {
-    pub async fn new(tablee: TableId, base: BaseId, user: UserId) -> Result<Self, Error> {
+    pub async fn new(tablee: TableId, base: BaseId, user: UserId) -> Result<Self, Irror> {
         let mut res = DB.query("
             LET $is_owner = (SELECT VALUE owner FROM $base)[0] == $user;
             

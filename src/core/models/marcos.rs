@@ -1,3 +1,5 @@
+use std::result::Result;
+
 // TODO: add support for SurrealValue and work on the base service
 
 #[macro_export]
