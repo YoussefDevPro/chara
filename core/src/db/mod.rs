@@ -29,5 +29,7 @@ pub async fn init() {
         .use_db("main")
         .await
         .unwrap();
-    DB.query(include_str!("../SQL/main.surql")).await.unwrap();
+    DB.query(include_str!("../../SQL/main.surql"))
+        .await
+        .unwrap();
 }
