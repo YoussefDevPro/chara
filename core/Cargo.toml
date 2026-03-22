@@ -1,0 +1,26 @@
+[package]
+name = "core"
+version = "0.0.1"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+surrealdb.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+chacha20poly1305.workspace = true
+axum.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+serde.workspace = true
+bitmask.workspace = true
+ordered-float.workspace = true
+mime.workspace = true 
+mime_serde_shim.workspace = true
+uuid.workspace = true
+validator.workspace = true
+iso_currency.workspace = true 
+phonenumber.workspace = true
+hackclub_auth_api.workspace = true
+hex.workspace = true
