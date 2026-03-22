@@ -4968,6 +4968,7 @@ version = "0.0.1"
 dependencies = [
  "app",
  "axum",
+ "core",
  "leptos",
  "leptos_axum",
  "log",
