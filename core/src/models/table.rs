@@ -1,4 +1,5 @@
 use crate::models::ids::*;
+use serde::{Deserialize, Serialize};
 use surrealdb::types::{Datetime, SurrealValue};
 
 // A Table represents a logical container within a Base.
@@ -7,7 +8,7 @@ use surrealdb::types::{Datetime, SurrealValue};
 // Only authorized users of the parent Base (typically the workspace owner or admins)
 // may modify or soft-delete a Table.
 
-#[derive(Debug, Clone, PartialEq, SurrealValue)]
+#[derive(Debug, Clone, PartialEq, SurrealValue, Serialize, Deserialize)]
 pub struct Table {
     pub id: Option<TableId>,
     pub created_at: Datetime,

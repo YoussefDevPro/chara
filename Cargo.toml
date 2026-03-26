@@ -33,7 +33,7 @@ chrono = "0.4.44"
 serde = "1.0.228"
 bitmask = "0.5.0"
 validator = "0.20.0"
-ordered-float = "5.1.0"
+ordered-float = { version = "5.1.0", features = ["serde"] }
 mime = "0.3.17"
 mime_serde_shim = "0.2.2"
 uuid = { version = "1.22.0", features = ["v4"] }

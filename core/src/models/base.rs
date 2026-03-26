@@ -1,4 +1,5 @@
 use crate::models::ids::*;
+use serde::{Deserialize, Serialize};
 use surrealdb::types::{Datetime, SurrealValue};
 
 // A Base represents a sub-entity within a Workspace.
@@ -7,7 +8,7 @@ use surrealdb::types::{Datetime, SurrealValue};
 // Only authorized users of the parent Workspace (typically the owner or admins)
 // are allowed to modify or soft-delete a Base.
 
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Base {
     pub id: Option<BaseId>,
     pub created_at: Option<Datetime>,

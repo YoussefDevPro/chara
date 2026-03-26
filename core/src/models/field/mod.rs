@@ -1,12 +1,13 @@
 pub use crate::models::field::kinds::*;
 use crate::models::ids::*;
+use serde::{Deserialize, Serialize};
 use surrealdb::types::{Datetime, SurrealValue};
 
 pub mod kinds;
 pub mod migration;
 
 /// ['src/core/models/field.md']
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Field {
     pub id: Option<FieldId>,
     pub created_at: Option<Datetime>,

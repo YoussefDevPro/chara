@@ -1,4 +1,5 @@
 use crate::models::ids::*;
+use serde::{Deserialize, Serialize};
 use surrealdb::types::*;
 
 // The User struct represents a global platform user.
@@ -6,13 +7,13 @@ use surrealdb::types::*;
 // Administrative privileges are granted explicitly by the system. (soon™)
 // Only Administators can apply patches to Users.
 
-#[derive(Debug, Clone, PartialEq, SurrealValue)]
+#[derive(Debug, Clone, PartialEq, SurrealValue, Serialize, Deserialize)]
 pub enum UserRole {
     User,
     Admin,
 }
 
-#[derive(Debug, Clone, PartialEq, SurrealValue)]
+#[derive(Debug, Clone, PartialEq, SurrealValue, Serialize, Deserialize)]
 pub struct User {
     pub id: Option<UserId>,
     pub created_at: Option<Datetime>,

@@ -1,8 +1,9 @@
 use crate::models::ids::*;
+use serde::{Deserialize, Serialize};
 use surrealdb::types::Datetime;
 use surrealdb::types::SurrealValue;
 
-#[derive(SurrealValue, Debug)]
+#[derive(SurrealValue, Debug, Serialize, Deserialize)]
 pub struct Session {
     pub id: Option<SessionId>,
     pub user: UserId,

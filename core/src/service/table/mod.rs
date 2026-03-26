@@ -1,8 +1,9 @@
 use crate::db::*;
 use crate::models::*;
 use crate::service::errors::TableError;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TableService {
     pub table: Table,
     pub user: UserId,

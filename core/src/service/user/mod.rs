@@ -12,12 +12,13 @@
 // sooooooooooooooooooooooooooooooon:sob:
 
 // make a function to get record id insteado f having to rerun this shit a million time
+use crate::HCAUTH;
 use crate::db::*;
 use crate::models::*;
 use crate::service::base::*;
 use crate::service::crypter::*;
 use crate::service::errors::{AuthError, BaseError, PermissionError, UserError};
-use crate::HCAUTH;
+use serde::{Deserialize, Serialize};
 use surrealdb::opt::PatchOp;
 use surrealdb::types::SurrealValue;
 
@@ -42,7 +43,7 @@ pub enum AuthMethod {
     Session(SessionI),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct UserService {
     pub user: User,
     user_record_id: UserId,

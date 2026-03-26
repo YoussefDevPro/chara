@@ -3,8 +3,9 @@ use crate::models::*;
 use crate::service::errors::BaseError;
 use crate::service::errors::TableError;
 use crate::service::table::TableService;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BaseService {
     pub base: Base,
     pub user: UserId,

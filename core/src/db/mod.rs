@@ -11,8 +11,8 @@ macro_rules! env_required {
 }
 
 use std::sync::LazyLock;
-use surrealdb::engine::local::{Db, Mem};
 use surrealdb::Surreal;
+use surrealdb::engine::local::{Db, Mem};
 
 pub mod error;
 pub use error::Irror;

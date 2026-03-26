@@ -1,9 +1,9 @@
-use std::str::FromStr;
-
 use crate::models::field::{AggregateFunction, LinkType, Prefix};
 use crate::models::ids::*;
 use iso_currency::CurrencySymbol;
 use ordered_float::OrderedFloat;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use surrealdb::types::{Datetime, Duration, Kind, Number, SurrealValue, Value as XValue};
 use thiserror::Error;
 use uuid::Uuid;
@@ -11,7 +11,7 @@ use validator::ValidateLength;
 
 pub const MAX_TEXT_LENGHT: u32 = 999_999; // ~1MB single byte chars
 
-#[derive(Error, Debug, Clone, PartialEq, Eq, SurrealValue)]
+#[derive(Error, Debug, Clone, PartialEq, Eq, SurrealValue, Serialize, Deserialize)]
 pub enum CellError {
     #[error("Invalid email format: {0}")]
     InvalidEmail(String),
@@ -50,7 +50,7 @@ pub enum CellError {
     TextTooBig(u64),
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct CellValue {
     id: CellId,
     created_at: Datetime,
@@ -58,7 +58,7 @@ pub struct CellValue {
     value: Value,
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Value {
     SingleLine(SingleLineValue),
     LongText(Box<LongTextValue>),
@@ -83,7 +83,7 @@ pub enum Value {
     JSON(Box<JsonValue>),
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AttachmentItem {
     file_id: Uuid,   // UUID
     name: String,    // the original name of the file
@@ -92,8 +92,8 @@ pub struct AttachmentItem {
     uploaded_at: Datetime,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Meme(pub mime::Mime);
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Meme(#[serde(with = "mime_serde_shim")] pub mime::Mime);
 
 impl surrealdb::types::SurrealValue for Meme {
     fn kind_of() -> Kind {
@@ -101,7 +101,7 @@ impl surrealdb::types::SurrealValue for Meme {
     }
 
     fn into_value(self) -> XValue {
-        XValue::String(String::from(self.0.to_string()))
+        XValue::String(self.0.to_string())
     }
 
     fn from_value(value: XValue) -> Result<Self, surrealdb::Error> {
@@ -160,7 +160,7 @@ impl AttachmentItem {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AttachmentValue {
     files: Vec<AttachmentItem>,
 }
@@ -174,7 +174,7 @@ impl AttachmentValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct JsonValue {
     pub value: String, // use a strong type for json so we make sure its parseable
 }
@@ -191,7 +191,7 @@ impl JsonValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ModifiedTimeValue {
     pub value: Datetime,
 }
@@ -205,7 +205,7 @@ impl ModifiedTimeValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct CreatedAtValue {
     pub value: Datetime,
 }
@@ -219,7 +219,7 @@ impl CreatedAtValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct AutoNumberValue {
     value: usize,
     prefix: Prefix,
@@ -254,7 +254,7 @@ impl AutoNumberValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct FormulaValue {
     expression: String, // change it by an Expression type to make sure abt safty
     result: Box<Value>,
@@ -283,7 +283,7 @@ impl FormulaValue {
 // to the tables
 // work on code type safety to make this as ez as cake :p
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RollUpValue {
     link_field_id: FieldId,
     target_field_id: FieldId,
@@ -321,7 +321,7 @@ impl RollUpValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LookUpValue {
     link_field_id: FieldId,
     target_field_id: FieldId,
@@ -348,7 +348,7 @@ impl LookUpValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LinkValue {
     pub target_table_id: TableId,
     pub record_ids: Vec<RecordId>,
@@ -375,7 +375,7 @@ impl LinkValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DurationValue {
     value: Duration,
 }
@@ -390,7 +390,7 @@ impl DurationValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DateValue {
     value: Datetime,
 }
@@ -405,7 +405,7 @@ impl DateValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct RatingValue {
     value: u8,
 }
@@ -426,7 +426,7 @@ impl RatingValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PercentValue {
     value: i32,
 }
@@ -440,7 +440,7 @@ impl PercentValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct CurrencyValue {
     value: i64,
     currency_symbole: String,
@@ -466,12 +466,12 @@ impl CurrencyValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DecimalValue {
     value: OrderedFloatIThink,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct OrderedFloatIThink(pub OrderedFloat<f64>);
 
 impl surrealdb::types::SurrealValue for OrderedFloatIThink {
@@ -481,7 +481,7 @@ impl surrealdb::types::SurrealValue for OrderedFloatIThink {
     }
 
     fn into_value(self) -> XValue {
-        XValue::Number(Number::Float(self.0 .0))
+        XValue::Number(Number::Float(self.0.0))
     }
 
     fn from_value(value: XValue) -> Result<Self, surrealdb::Error> {
@@ -519,7 +519,7 @@ impl DecimalValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct NumberValue {
     value: usize,
 }
@@ -542,7 +542,7 @@ impl NumberValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PhoneValue {
     value: String,
 }
@@ -569,7 +569,7 @@ impl PhoneValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct UrlValue {
     value: String,
 }
@@ -590,7 +590,7 @@ impl UrlValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Email {
     value: String,
 }
@@ -611,7 +611,7 @@ impl Email {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct LongTextValue {
     value: String,
 }
@@ -638,7 +638,7 @@ impl LongTextValue {
     }
 }
 
-#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, SurrealValue, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SingleLineValue {
     value: String,
 }

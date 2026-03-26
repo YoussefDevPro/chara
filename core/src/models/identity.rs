@@ -1,8 +1,9 @@
 use crate::models::ids::*;
+use serde::{Deserialize, Serialize};
 use surrealdb::types::Datetime;
 use surrealdb::types::SurrealValue;
 
-#[derive(SurrealValue)]
+#[derive(SurrealValue, Serialize, Deserialize)]
 pub struct Identity {
     pub id: Option<IdentityId>,
     pub user: UserId,
