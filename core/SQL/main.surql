@@ -35,6 +35,7 @@ PERMISSIONS
    FOR update NONE
    FOR delete FULL;
 DEFINE FIELD OVERWRITE token ON TABLE session TYPE string
+    DEFAULT rand::string(64)
     VALUE  crypto::argon2::generate($value);
 DEFINE FIELD OVERWRITE ip ON TABLE session TYPE string
     ASSERT string::is_ip($value);

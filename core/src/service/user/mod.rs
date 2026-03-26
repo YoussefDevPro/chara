@@ -257,6 +257,28 @@ COMMIT TRANSACTION;",
         self.current_base = Some(service.clone());
         Ok(service.base)
     }
+
+    pub async fn create_session(&self, ip: String, agent: String) -> Result<String, Irror> {
+        // TODO: use InsertSession instead but u gotta also adapt it with the new way we generate
+        // tokens using surrealdb and some other extravaganza just dont forget it hehe
+        let token: Session = DB
+            .query(
+                "CREATE session CONTENT {
+                user: $user,
+                ip: $ip,
+                user_agent: $agent,
+            }",
+            )
+            .bind(("user", self.user_record_id.0.clone()))
+            .bind(("ip", ip))
+            .bind(("agent", agent))
+            .await?
+            .take::<Option<Session>>(0)?
+            .ok_or(Irror::Db("aaaaaaaaaa".to_string()))?;
+
+        // 4. Return the RAW token so it can be sent to the browser via Cookie
+        Ok(token.token)
+    }
 }
 
 // ok, i gotta learn how argon2 works again, dam i forgot how it works its been like, 6months or

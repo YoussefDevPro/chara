@@ -18,6 +18,7 @@ libc = { path = "../core", optional = true }
 tw_merge.workspace = true
 icons.workspace = true
 leptos_ui.workspace = true
+axum-extra.workspace = true
 
 
 [features]
