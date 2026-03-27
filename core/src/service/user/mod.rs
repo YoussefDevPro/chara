@@ -105,11 +105,11 @@ impl UserService {
 
     pub async fn register(token: String) -> Result<UserService, Irror> {
         let auth_identity = HCAUTH.get_identity(token.clone()).await;
-        //let encrypted_token = encrypt_token(&token);
+        let encrypted_token = encrypt_token(&token);
 
         dbg!(&auth_identity);
         let auth_identity = auth_identity.map_err(|_| AuthError::VerificationFailed)?;
-        //let encrypted_token = encrypted_token.await.map_err(|_| AuthError::InvalidToken)?;
+        let encrypted_token = encrypted_token.await.map_err(|_| AuthError::InvalidToken)?;
         // NOTE : dont forget to make it atomic using transactions
         let mut res = DB
             .query(
@@ -154,7 +154,7 @@ impl UserService {
                     .unwrap_or("Lmouden".to_string()),
             ))
             .bind(("email", auth_identity.identity.primary_email))
-            .bind(("access_token", token)) // NOTE: using raw token, only before interview bc u
+            .bind(("access_token", encrypted_token)) // NOTE: using raw token, only before interview bc u
             // forgot to return an actual string and instead decided
             // to return a [u8] and now the future u hates the past u
             .await?;
@@ -295,7 +295,6 @@ COMMIT TRANSACTION;",
             .take::<Option<Session>>(0)?
             .ok_or(Irror::Db("aaaaaaaaaa".to_string()))?;
 
-        // 4. Return the RAW token so it can be sent to the browser via Cookie
         Ok("IIOOII".to_string()) // NOTE: dont forget to fix that :heavysob:
     }
 }
