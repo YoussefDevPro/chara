@@ -4,10 +4,12 @@ use leptos::prelude::*;
 use leptos_axum::{LeptosRoutes, generate_route_list};
 use std::net::SocketAddr;
 
+// NOTE: NEVER, NEVER, use axum extra again, NEVER!
+
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
-    libc::init().await;
+    charac::init().await;
     let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
     let leptos_options = conf.leptos_options;

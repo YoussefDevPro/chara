@@ -14,15 +14,14 @@ http.workspace = true
 cfg-if.workspace = true
 thiserror.workspace = true
 axum = { workspace = true, optional = true }
-libc = { path = "../core", optional = true }
+charac = { path = "../core", optional = true }
 tw_merge.workspace = true
 icons.workspace = true
 leptos_ui.workspace = true
-axum-extra.workspace = true
-
+leptos-use.workspace = true
 
 [features]
 default = []
 hydrate = ["leptos/hydrate"]
-ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum", "dep:libc", "dep:axum"]
+ssr = ["leptos/ssr", "leptos_meta/ssr", "leptos_router/ssr", "dep:leptos_axum", "dep:charac", "dep:axum"]
 
