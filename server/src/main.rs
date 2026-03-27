@@ -17,6 +17,7 @@ async fn main() {
     let routes = generate_route_list(App);
 
     let app = Router::new()
+        .route_service("/callback", oauth) // TODO: make an oauth service for the hca auth instead of leptos
         .leptos_routes(&leptos_options, routes, {
             let leptos_options = leptos_options.clone();
             move || shell(leptos_options.clone())
