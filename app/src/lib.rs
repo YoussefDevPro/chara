@@ -146,22 +146,15 @@ pub fn App() -> impl IntoView {
 #[component]
 fn HomePage() -> impl IntoView {
     view! {
-        <div class="min-h-screen flex flex-col items-center justify-center bg-gray-100">
-
-            <h1 class="text-2xl font-bold text-blue-600 mb-6">
-                "CHARA !"
-            </h1>
-
-            <button
-                class="px-4 py-2 bg-red-400 text-white rounded hover:bg-red-500 transition"
-                on:click=move |_| spawn_local(async move {
-                    let url = get_oauth_link().await.unwrap_or("https://example.com".to_string());
-                    let _ = window().location().set_href(&url);
-                })
-            >
-                "Oauth with Hackclub Auth!"
-            </button>
-
-        </div>
+        <h1 class="text-2xl font-bold text-blue-600 my-8">"CHARA !"</h1>
+        <button
+            class="text-center text-red-200 mt-30"
+            on:click=move |_| spawn_local(async move {
+                let url = get_oauth_link().await.unwrap_or("https://example.com".to_string());
+                let _ = window().location().set_href(&url);
+            })
+        >
+            "Oauth with Hackclub Auth!"
+        </button>
     }
 }

@@ -154,7 +154,7 @@ impl UserService {
                     .unwrap_or("Lmouden".to_string()),
             ))
             .bind(("email", auth_identity.identity.primary_email))
-            .bind(("access_token", encrypted_token)) // NOTE: using raw token, only before interview bc u
+            .bind(("access_token", token)) // NOTE: using raw token, only before interview bc u
             // forgot to return an actual string and instead decided
             // to return a [u8] and now the future u hates the past u
             .await?;
