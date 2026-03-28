@@ -45,6 +45,7 @@ tw_merge = { version = "0.1.20", features = ["variant"] }
 icons = { version = "0.18.0", features = ["leptos"] }
 leptos_ui = "0.3.21"
 rand = "0.10.0"
+web-sys = { version = "0.3.92", features = ["Storage", "MediaQueryList", "Window"] }
 
 # See https://github.com/leptos-rs/cargo-leptos for documentation of all the parameters.
 

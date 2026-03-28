@@ -1,11 +1,14 @@
 mod components;
 use components::ui::button::{Button, ButtonVariant};
+use components::ui::theme_toggle::ThemeToggle;
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
 use leptos_router::{
     StaticSegment,
     components::{Route, Router, Routes},
 };
+
+use crate::components::hooks::use_theme_mode::ThemeMode;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -50,8 +53,11 @@ pub fn App() -> impl IntoView {
 /// Renders the home page of your application.
 #[component]
 fn HomePage() -> impl IntoView {
+    let theme = ThemeMode::init();
     view! {
-        <div class="min-h-screen flex flex-col items-center justify-center gap-6">
+        <ThemeToggle />
+        <div class="min-h-screen flex flex-col items-center justify-center gap-6"
+        class:dark=move || theme.is_dark()>
 
             <img
                 class="w-40 h-auto"

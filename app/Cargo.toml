@@ -18,6 +18,7 @@ thiserror.workspace = true
 tw_merge.workspace = true
 icons.workspace = true
 leptos_ui.workspace = true
+web-sys.workspace = true
 
 [features]
 default = []

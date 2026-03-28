@@ -74,3 +74,4 @@ pub fn ThemeToggle() -> impl IntoView {
         </button>
     }
 }
+
