@@ -25,33 +25,18 @@ pub async fn oauth(
     jar: CookieJar,
     user_agent: Option<TypedHeader<UserAgent>>,
 ) -> Result<(CookieJar, Redirect), StatusCode> {
-    println!("start");
-
     let user_agent = user_agent
         .map(|ua| ua.to_string())
         .unwrap_or_else(|| "Unknown".to_string());
-    println!("exchanging code");
 
-    let auth_res = HCAUTH
-        .exchange_code(params.code)
-        .await
-        .map_err(|_| StatusCode::UNAUTHORIZED)?;
-    let access_token = auth_res.access_token.ok_or(StatusCode::UNAUTHORIZED)?;
-    println!("registering");
+    let ip = addr.ip().to_string();
 
-    let service = UserService::register(access_token).await.map_err(|e| {
+    let service = UserService::register(params.code).await.map_err(|e| {
         eprintln!("Registration error: {:?}", e);
-
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
-    println!("creating token");
-
-    let session_token = service
-        .create_session(addr.ip().to_string(), user_agent)
-        .await
-        .ok()
-        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
-    println!("creating yummy cookie");
+    let tmp = service.create_session(ip, user_agent).await;
+    let session_token = tmp.ok().ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let cookie = Cookie::build(("session", session_token))
         .path("/")

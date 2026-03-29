@@ -777,6 +777,7 @@ name = "charac"
 version = "0.0.1"
 dependencies = [
  "axum",
+ "base64",
  "bitmask",
  "chacha20poly1305",
  "chrono",
@@ -2064,9 +2065,9 @@ dependencies = [
 
 [[package]]
 name = "hackclub_auth_api"
-version = "0.1.1"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad6cef21ab679465b10d329046056629c74858637c34264e86daf12c0419f5b3"
+checksum = "0d903edcc8d410a3c6564e6e3fdeb38eca3500629425fa43b9b3fc1e27bbe96b"
 dependencies = [
  "chrono",
  "futures",
@@ -2074,6 +2075,7 @@ dependencies = [
  "reqwest 0.12.28",
  "serde",
  "tokio",
+ "urlencoding",
 ]
 
 [[package]]

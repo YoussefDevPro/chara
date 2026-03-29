@@ -19,8 +19,9 @@ use crate::models;
 use crate::models::*;
 use crate::service::base::*;
 use crate::service::crypter::*;
-use crate::service::errors::DatabaseError;
 use crate::service::errors::{AuthError, BaseError, PermissionError, UserError};
+use base64::Engine;
+use base64::engine::general_purpose;
 use chrono::{DateTime, Utc};
 use rand::RngExt;
 use std::time::{Duration, SystemTime};
@@ -123,11 +124,10 @@ impl UserService {
     // TODO: omg look at this spagethi code, u gotta find a nicer way uh ;-;
 
     pub async fn register(code: String) -> Result<UserService, Irror> {
-        let token = HCAUTH
-            .exchange_code(code)
-            .await
-            .ok()
-            .ok_or(AuthError::VerificationFailed)?;
+        let tmp = HCAUTH.exchange_code(code).await;
+
+        let token = tmp.ok().ok_or(AuthError::VerificationFailed)?;
+
         let access_token = token
             .access_token
             .as_ref()
@@ -162,6 +162,8 @@ impl UserService {
                BEGIN TRANSACTION;
                 LET $existing = (SELECT id FROM identity WHERE external_id = $ext_id LIMIT 1);
                 IF $existing[0].id != NONE {
+                    RETURN NONE;
+                } ELSE {
                     LET $u = (CREATE user CONTENT {
                         first_name: $first_name,
                         last_name: $last_name,
@@ -175,8 +177,6 @@ impl UserService {
                         expires_at: $expires_at
                     };
                     RETURN $u[0]; 
-                } ELSE {
-                    RETURN NONE;
                 };
                 COMMIT TRANSACTION;
             ",
@@ -189,7 +189,7 @@ impl UserService {
             .bind(("refresh_token", encrypted_refresh_token))
             .bind(("expires_at", expires_at))
             .await?;
-        let user: Option<User> = res.take(0)?;
+        let user: Option<User> = res.take(2)?;
         let user = user.ok_or(UserError::NotFound)?;
         let record_id = UserId(user.id.as_ref().ok_or(UserError::NotFound)?.0.clone());
 
@@ -307,12 +307,8 @@ impl UserService {
     }
 
     pub async fn create_session(&self, ip: String, agent: String) -> Result<String, Irror> {
-        let random_token: String =
-            String::from_utf8((0..32).map(|_| rand::rng().random()).collect::<Vec<u8>>())
-                .ok()
-                .ok_or(DatabaseError::TransactionFailed(
-                    "Failed to created random token ??".to_string(),
-                ))?;
+        let bytes: Vec<u8> = (0..32).map(|_| rand::rng().random()).collect();
+        let random_token = general_purpose::STANDARD.encode(bytes);
         let session = models::InsertSession {
             ip,
             user_agent: agent,

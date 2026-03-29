@@ -39,7 +39,7 @@ mime_serde_shim = "0.2.2"
 uuid = { version = "1.22.0", features = ["v4"] }
 phonenumber = "0.3.9"
 iso_currency = { version = "0.5.3", features = ["with-serde"] }
-hackclub_auth_api = "0.1.1"
+hackclub_auth_api = "0.1.5"
 hex = "0.4.3"
 tw_merge = { version = "0.1.20", features = ["variant"] }
 icons = { version = "0.18.0", features = ["leptos"] }
@@ -50,6 +50,7 @@ axum-extra = { version = "0.12.5", features = ["cookie", "cookie-private", "cook
 headers = "0.4.1"
 time = "0.3.47"
 dotenvy = "0.15.7"
+base64 = "0.22.1"
 
 # See https://github.com/leptos-rs/cargo-leptos for documentation of all the parameters.
 
