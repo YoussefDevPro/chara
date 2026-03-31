@@ -37,7 +37,6 @@ pub async fn oauth(
     })?;
     let tmp = service.create_session(ip, user_agent).await;
     let session_token = tmp.ok().ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
-    dbg!(&session_token);
 
     let cookie = Cookie::build(("session", session_token))
         .path("/")
@@ -47,7 +46,6 @@ pub async fn oauth(
         .build();
 
     let updated_jar = jar.add(cookie);
-    dbg!(&updated_jar);
 
     Ok((updated_jar, Redirect::to("/dashboard")))
 }
