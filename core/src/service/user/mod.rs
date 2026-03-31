@@ -94,7 +94,7 @@ impl UserService {
                     .query(
                         "SELECT VALUE user.* FROM session 
                         WHERE ip = $ip 
-                        AND crypto::argon2::compare(`token`, $tokenn)  
+                        AND crypto::sha512(`token`) == $tokenn  
                         AND user_agent = $user_agent 
                         AND expires_at > time::now()
                         AND user.is_deleted = false",
@@ -349,3 +349,5 @@ impl UserService {
 // ok uh now i gotta write smt to get the sessions, but at first i should see if i can set a record
 // expiration for the session
 // nop.. there isnt, so ig ill add a loop event where we delete old sessions every , lets say 5min
+//
+// also switched to sha512 bc argon2 has uh, constant time, so it WILL slow down the server uh
