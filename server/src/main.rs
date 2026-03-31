@@ -10,7 +10,7 @@ use std::net::SocketAddr;
 mod oauth;
 
 #[derive(Clone)]
-struct AppState {
+pub struct AppState {
     pub leptos_options: LeptosOptions,
     pub key: Key,
 }

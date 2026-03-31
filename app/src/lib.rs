@@ -3,12 +3,37 @@ mod pages;
 
 use crate::pages::*;
 use leptos::prelude::*;
-use leptos_meta::{MetaTags, Stylesheet, Title, provide_meta_context};
+use leptos_meta::{provide_meta_context, MetaTags, Stylesheet, Title};
 use leptos_router::path;
 use leptos_router::{
-    StaticSegment,
     components::{Route, Router, Routes},
+    StaticSegment,
 };
+
+// TODO: work on the app state so u can read cookies using server functions, the code below should
+// be worked hehe
+
+#[derive(Clone)]
+pub struct AppState {
+    #[cfg(feature = "ssr")]
+    pub leptos_options: leptos::leptos_config::LeptosOptions,
+    #[cfg(feature = "ssr")]
+    pub key: axum_extra::extract::cookie::Key,
+}
+
+#[cfg(feature = "ssr")]
+impl axum::extract::FromRef<AppState> for axum_extra::extract::cookie::Key {
+    fn from_ref(state: &AppState) -> Self {
+        state.key.clone()
+    }
+}
+
+#[cfg(feature = "ssr")]
+impl axum::extract::FromRef<AppState> for leptos::leptos_config::LeptosOptions {
+    fn from_ref(state: &AppState) -> Self {
+        state.leptos_options.clone()
+    }
+}
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
