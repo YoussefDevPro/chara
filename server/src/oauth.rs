@@ -2,7 +2,7 @@ use axum::extract::ConnectInfo;
 use axum::extract::Query;
 use axum::{http::StatusCode, response::Redirect};
 use axum_extra::TypedHeader;
-use axum_extra::extract::CookieJar;
+use axum_extra::extract::PrivateCookieJar;
 use axum_extra::extract::cookie::Cookie;
 use axum_extra::extract::cookie::SameSite;
 use charac::HCAUTH;
@@ -22,9 +22,9 @@ pub struct Code {
 pub async fn oauth(
     Query(params): Query<Code>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    jar: CookieJar,
+    jar: PrivateCookieJar,
     user_agent: Option<TypedHeader<UserAgent>>,
-) -> Result<(CookieJar, Redirect), StatusCode> {
+) -> Result<(PrivateCookieJar, Redirect), StatusCode> {
     let user_agent = user_agent
         .map(|ua| ua.to_string())
         .unwrap_or_else(|| "Unknown".to_string());
