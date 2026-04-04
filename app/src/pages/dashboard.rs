@@ -25,8 +25,8 @@ pub async fn get_user_bases() -> Result<Vec<UserBase>, ServerFnError> {
         .into_iter()
         .map(|b| UserBase {
             name: b.name,
-            owner_name: format!("{:?}", b.owner.0.key),
-            id: b.id.map(|id| format!("{:?}", id.0.key)).unwrap_or_default(),
+            owner_name: format!("{:?}", b.owner),
+            id: b.id.map(|id| format!("{:?}", id)).unwrap_or_default(),
         })
         .collect();
     let duration = start.elapsed().as_millis();
@@ -93,32 +93,54 @@ pub fn DashboardPage() -> impl IntoView {
                             create_base_action.dispatch(name);
                         }
                     }>
-                        {move || if create_base_action.pending().get() { "Creating..." } else { "Create New Base" }}
+                        {move || {
+                            if create_base_action.pending().get() {
+                                "Creating..."
+                            } else {
+                                "Create New Base"
+                            }
+                        }}
                     </Button>
 
-                    <Button on:click=move |_| set_refresh_count.update(|n| *n += 1)>
-                        "Refresh List"
-                    </Button>
+                    <Button on:click=move |_| {
+                        set_refresh_count.update(|n| *n += 1)
+                    }>"Refresh List"</Button>
                 </div>
 
                 <hr class="border-[var(--border)]" />
 
-                <Suspense fallback=move || view! { <p>"Loading bases..."</p> }>
+                <Suspense fallback=move || {
+                    view! { <p>"Loading bases..."</p> }
+                }>
                     {move || Suspend::new(async move {
                         match bases.get() {
-                            Some(list) if list.is_empty() => view! { <p>"No bases found."</p> }.into_any(),
-                            Some(list) => view! {
-                                <ul class="space-y-2">
-                                    {list.into_iter().map(|base| view! {
-                                        <li class="p-4 border rounded-lg bg-card">
-                                            <span class="font-bold">{base.name}</span>
-                                            <span class="text-sm opacity-70 ml-2">"(" {base.id} ")"</span>
-                                            <p class="text-xs text-muted-foreground">"Owner: " {base.owner_name}</p>
-                                        </li>
-                                    }).collect_view()}
-                                </ul>
-                            }.into_any(),
-                            _ => view! { <p class="text-red-500">"Unknown error"</p>}.into_any()
+                            Some(list) if list.is_empty() => {
+                                view! { <p>"No bases found."</p> }.into_any()
+                            }
+                            Some(list) => {
+                                view! {
+                                    <div class="grid grid-cols-3 gap-3">
+                                        {list
+                                            .into_iter()
+                                            .map(|base| {
+                                                view! {
+                                                    <div class="border rounded-lg bg-card">
+                                                        <span class="font-bold">{base.name}</span>
+                                                        <span class="text-sm opacity-70 ml-2">
+                                                            "(" {base.id} ")"
+                                                        </span>
+                                                        <p class="text-xs text-muted-foreground">
+                                                            "Owner: " {base.owner_name}
+                                                        </p>
+                                                    </div>
+                                                }
+                                            })
+                                            .collect_view()}
+                                    </div>
+                                }
+                                    .into_any()
+                            }
+                            _ => view! { <p class="text-red-500">"Unknown error"</p> }.into_any(),
                         }
                     })}
                 </Suspense>
