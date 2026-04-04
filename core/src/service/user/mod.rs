@@ -127,6 +127,9 @@ impl UserService {
     pub async fn register(code: String) -> Result<UserService, Irror> {
         let tmp = HCAUTH.exchange_code(code).await;
 
+        // TODO: we rly should make sure we see if the token already exists before registering
+        // another user
+
         let token = tmp.ok().ok_or(AuthError::VerificationFailed)?;
 
         let access_token = token

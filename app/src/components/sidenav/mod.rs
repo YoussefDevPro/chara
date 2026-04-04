@@ -1,11 +1,11 @@
-use icons::BrickWall;
+use icons::Annoyed;
 use leptos::prelude::*;
 
 #[component]
 pub fn SideNav() -> impl IntoView {
     view! {
-        <aside class="fixed top-0 left-0 z-40 w-64 h-full">
-            <BrickWall class="size-8 text-black-500"/>
+        <aside class="z-40 w-auto h-screen p-2 border-r">
+            <Annoyed class="size-12 text-black  text-[var(--foreground)] stroke-[var(foreground)] border p-2" />
         </aside>
     }
 }

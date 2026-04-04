@@ -1,7 +1,17 @@
-use crate::components::hooks::use_theme_mode::ThemeMode;
-use crate::components::sidenav::SideNav;
-use crate::components::ui::button::Button;
-use crate::components::ui::theme_toggle::ThemeToggle;
+use crate::components::{
+    hooks::use_theme_mode::ThemeMode,
+    sidenav::SideNav,
+    ui::{
+        breadcrumb::{
+            Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
+            BreadcrumbPage, BreadcrumbSeparator,
+        },
+        button::{Button, ButtonClass, ButtonSize, ButtonVariant},
+        empty::*,
+        theme_toggle::ThemeToggle,
+    },
+};
+use icons::{ArrowUpRight, FolderCode, Lock, Plus};
 use leptos::prelude::*;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone)]
@@ -77,37 +87,45 @@ pub fn DashboardPage() -> impl IntoView {
     });
 
     view! {
-        <div class:dark=move || theme.is_dark()>
+        <div
+            class:dark=move || theme.is_dark()
+            class="flex min-h-screen bg-[var(--background)] text-[var(--foreground)]"
+        >
             <SideNav />
-            <div class="relative min-h-screen bg-[var(--background)] text-[var(--foreground)] p-8">
+            <div class="flex-1 relative p-8">
                 <div class="absolute top-4 right-4 p-2">
                     <ThemeToggle />
                 </div>
 
-                <div class="flex flex-col gap-6 max-w-4xl mx-auto">
-                    <h1 class="text-3xl font-bold">"Dashboard"</h1>
+                <div class="flex flex-col gap-6 h-full w-full">
+                    <Breadcrumb>
+                        <BreadcrumbList>
+                            <BreadcrumbItem>
+                                <BreadcrumbLink attr:href="/dashboard">"Dashboard"</BreadcrumbLink>
+                            </BreadcrumbItem>
 
-                    <div class="flex gap-4">
-                        <Button on:click=move |_| {
-                            if let Some(name) = window().confirm_prompt("Enter base name:") {
-                                create_base_action.dispatch(name);
+                            <BreadcrumbSeparator />
+                        </BreadcrumbList>
+                    </Breadcrumb>
+
+                    <div class="flex gap-4 justify-end">
+                        <Button
+                            on:click=move |_| {
+                                if let Some(name) = window().confirm_prompt("Enter base name:") {
+                                    create_base_action.dispatch(name);
+                                }
                             }
-                        }>
+                            variant=ButtonVariant::Outline
+                        >
                             {move || {
                                 if create_base_action.pending().get() {
-                                    "Creating..."
+                                    view! { <Lock /> }.into_any()
                                 } else {
-                                    "Create New Base"
+                                    view! { <Plus /> }.into_any()
                                 }
                             }}
                         </Button>
-
-                        <Button on:click=move |_| {
-                            set_refresh_count.update(|n| *n += 1)
-                        }>"Refresh List"</Button>
                     </div>
-
-                    <hr class="border-[var(--border)]" />
 
                     <Suspense fallback=move || {
                         view! { <p>"Loading bases..."</p> }
@@ -115,9 +133,46 @@ pub fn DashboardPage() -> impl IntoView {
                         {move || Suspend::new(async move {
                             match bases.get() {
                                 Some(list) if list.is_empty() => {
-                                    view! { <p>"No bases found."</p> }.into_any()
+                                    view! {
+                                        <Empty class="flex-1 flex items-center justify-center">
+                                            <EmptyHeader>
+                                                <EmptyMedia variant=EmptyMediaVariant::Icon>
+                                                    <FolderCode />
+                                                </EmptyMedia>
+                                                <EmptyTitle>"No Base Yet"</EmptyTitle>
+                                                <EmptyDescription>
+                                                    "You haven't created any bases yet. Get started by creating your first base! :3"
+                                                </EmptyDescription>
+                                            </EmptyHeader>
+
+                                            <EmptyContent>
+                                                <div class="flex gap-2">
+                                                    <Button on:click=move |_| {
+                                                        if let Some(name) = window()
+                                                            .confirm_prompt("Enter base name:")
+                                                        {
+                                                            create_base_action.dispatch(name);
+                                                        }
+                                                    }>"Create Base"</Button>
+                                                </div>
+
+                                                <Button
+                                                    variant=ButtonVariant::Link
+                                                    size=ButtonSize::Sm
+                                                    class="text-muted-foreground"
+                                                >
+                                                    <a href="#" class="flex gap-1 items-center">
+                                                        <span>"Learn More"</span>
+                                                        <ArrowUpRight />
+                                                    </a>
+                                                </Button>
+                                            </EmptyContent>
+                                        </Empty>
+                                    }
+                                        .into_any()
                                 }
                                 Some(list) => {
+
                                     view! {
                                         <div class="grid grid-cols-3 gap-3">
                                             {list
@@ -152,7 +207,6 @@ pub fn DashboardPage() -> impl IntoView {
     }
 }
 
-// Small helper trait to make window prompt cleaner in Rust
 trait WindowExt {
     fn confirm_prompt(&self, message: &str) -> Option<String>;
 }

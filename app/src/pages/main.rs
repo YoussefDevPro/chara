@@ -19,10 +19,7 @@ pub fn HomePage() -> impl IntoView {
             </div>
 
             <div class="flex flex-col items-center justify-center min-h-screen gap-6">
-                <img
-                    class="w-120 h-auto rounded-sm border"
-                    src="chaira.png"
-                />
+                <img class="w-120 h-auto rounded-sm border" src="chaira.png" />
 
                 <div class="flex gap-4">
                     <Button on:click=move |_| {
