@@ -6,3 +6,6 @@ pub mod dropdown_menu;
 pub mod separator;
 pub mod breadcrumb;
 pub mod empty;
+pub mod input;
+pub mod dialog;
+pub mod label;

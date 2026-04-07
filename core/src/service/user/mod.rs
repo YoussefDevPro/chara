@@ -129,9 +129,10 @@ impl UserService {
 
         // TODO: we rly should make sure we see if the token already exists before registering
         // another user
+        //
+        // ima ask gemini duh
 
         let token = tmp.ok().ok_or(AuthError::VerificationFailed)?;
-
         let access_token = token
             .access_token
             .as_ref()
@@ -140,11 +141,9 @@ impl UserService {
             .get_identity(access_token.to_string())
             .await
             .map_err(|_| AuthError::VerificationFailed)?;
-
         let encrypted_token = encrypt_token(access_token)
             .await
             .map_err(|_| AuthError::InvalidToken)?;
-
         let encrypted_refresh_token = encrypt_token(
             token
                 .refresh_token
@@ -154,7 +153,6 @@ impl UserService {
         .await
         .map_err(|_| AuthError::InvalidToken)?;
         let now = SystemTime::now();
-
         let expiration_system_time = now
             + Duration::from_secs(token.expires_in.ok_or(AuthError::VerificationFailed)? as u64);
 

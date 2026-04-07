@@ -14,9 +14,6 @@ use leptos_router::{
     components::{Route, Router, Routes},
 };
 
-// TODO: work on the app state so u can read cookies using server functions, the code below should
-// be worked hehe
-
 #[derive(Clone)]
 pub struct AppState {
     #[cfg(feature = "ssr")]
@@ -59,16 +56,13 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 
 #[component]
 pub fn App() -> impl IntoView {
-    // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
 
     view! {
         <Stylesheet id="leptos" href="/pkg/chara.css" />
 
-        // sets the document title
         <Title text="ChairaTastic!" />
 
-        // content for this welcome page
         <Router>
             <main>
                 <Routes fallback=|| "Page not found.".into_view()>

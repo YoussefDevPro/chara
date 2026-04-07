@@ -24,7 +24,7 @@ impl ThemeMode {
     /// Initializes a new ThemeMode instance.
     pub fn init() -> Self {
         let theme_mode = Self {
-            state: RwSignal::new(false),
+            state: RwSignal::new(true),
         };
 
         provide_context(theme_mode);
@@ -110,4 +110,3 @@ impl ThemeMode {
         }
     }
 }
-

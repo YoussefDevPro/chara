@@ -3,11 +3,16 @@ use crate::components::{
     sidenav::SideNav,
     ui::{
         breadcrumb::{
-            Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
-            BreadcrumbPage, BreadcrumbSeparator,
+            Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator,
         },
-        button::{Button, ButtonClass, ButtonSize, ButtonVariant},
+        button::{Button, ButtonSize, ButtonVariant},
+        dialog::{
+            Dialog, DialogBody, DialogClose, DialogContent, DialogDescription, DialogFooter,
+            DialogHeader, DialogTitle, DialogTrigger,
+        },
         empty::*,
+        input::Input,
+        label::Label,
         theme_toggle::ThemeToggle,
     },
 };
@@ -86,6 +91,8 @@ pub fn DashboardPage() -> impl IntoView {
         }
     });
 
+    let (name, set_name) = signal("".to_string());
+
     view! {
         <div
             class:dark=move || theme.is_dark()
@@ -109,22 +116,58 @@ pub fn DashboardPage() -> impl IntoView {
                     </Breadcrumb>
 
                     <div class="flex gap-4 justify-end">
-                        <Button
-                            on:click=move |_| {
-                                if let Some(name) = window().confirm_prompt("Enter base name:") {
-                                    create_base_action.dispatch(name);
-                                }
-                            }
-                            variant=ButtonVariant::Outline
-                        >
-                            {move || {
-                                if create_base_action.pending().get() {
-                                    view! { <Lock /> }.into_any()
-                                } else {
-                                    view! { <Plus /> }.into_any()
-                                }
-                            }}
-                        </Button>
+                        // TODO: fix the dialog so it clears the input when we created a base and
+                        // returns error when there is one
+                        // and also fix the issue where the dialog is not closed when using the +
+                        // btn for some reason
+                        <Dialog>
+                            <DialogTrigger>
+                                {move || {
+                                    if create_base_action.pending().get() {
+                                        view! { <Lock /> }.into_any()
+                                    } else {
+                                        view! { <Plus /> }.into_any()
+                                    }
+                                }}
+                            </DialogTrigger>
+
+                            <DialogContent class="sm:max-w-[425px]">
+                                <DialogBody>
+                                    <DialogHeader>
+                                        <DialogTitle>"Create a Base!"</DialogTitle>
+
+                                        <DialogDescription>
+                                            "To create a base, you first need a nice name, what could it be :3 ?"
+                                        </DialogDescription>
+                                    </DialogHeader>
+
+                                    <div class="flex flex-col gap-4 justify-center">
+                                        <div class="flex flex-col gap-2">
+                                            <Label html_for="name-1">Name</Label>
+                                            <Input
+                                                on:input=move |ev| {
+                                                    set_name.set(event_target_value(&ev));
+                                                }
+                                                prop:value=move || name.get()
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <DialogFooter>
+                                        <DialogClose class="w-full sm:w-fit">"Cancel"</DialogClose>
+                                        <Button
+                                            attr:r#type="button"
+                                            on:click=move |_| {
+                                                let current_name = name.get();
+                                                create_base_action.dispatch(current_name);
+                                            }
+                                        >
+                                            "Create"
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogBody>
+                            </DialogContent>
+                        </Dialog>
                     </div>
 
                     <Suspense fallback=move || {
@@ -147,13 +190,46 @@ pub fn DashboardPage() -> impl IntoView {
 
                                             <EmptyContent>
                                                 <div class="flex gap-2">
-                                                    <Button on:click=move |_| {
-                                                        if let Some(name) = window()
-                                                            .confirm_prompt("Enter base name:")
-                                                        {
-                                                            create_base_action.dispatch(name);
-                                                        }
-                                                    }>"Create Base"</Button>
+                                                    <Dialog>
+                                                        <DialogTrigger>"Create Base"</DialogTrigger>
+                                                        <DialogContent class="sm:max-w-[425px]">
+                                                            <DialogBody>
+                                                                <DialogHeader>
+                                                                    <DialogTitle>"Create a Base!"</DialogTitle>
+
+                                                                    <DialogDescription>
+                                                                        "To create a base, you first need a nice name, what could it be :3 ?"
+                                                                    </DialogDescription>
+                                                                </DialogHeader>
+
+                                                                <div class="flex flex-col gap-4 justify-center">
+                                                                    <div class="flex flex-col gap-2">
+                                                                        <Label html_for="name-1">Name</Label>
+                                                                        <Input
+                                                                            on:input=move |ev| {
+                                                                                set_name.set(event_target_value(&ev));
+                                                                            }
+                                                                            prop:value=move || name.get()
+                                                                        />
+                                                                    </div>
+                                                                </div>
+
+                                                                <DialogFooter>
+                                                                    <DialogClose class="w-full sm:w-fit">"Cancel"</DialogClose>
+                                                                    <Button
+                                                                        attr:r#type="button"
+                                                                        on:click=move |_| {
+                                                                            let current_name = name.get();
+                                                                            create_base_action.dispatch(current_name);
+                                                                        }
+                                                                    >
+                                                                        "Create"
+                                                                    </Button>
+                                                                </DialogFooter>
+                                                            </DialogBody>
+                                                        </DialogContent>
+                                                    </Dialog>
+
                                                 </div>
 
                                                 <Button
