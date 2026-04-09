@@ -26,6 +26,7 @@ VALUE string::trim($value)
 ASSERT string::trim($value) != "";
 DEFINE FIELD OVERWRITE email ON TABLE user TYPE string
 ASSERT string::is_email($value) 
+VALUE string::lowercase($value);
 PERMISSIONS FOR update NONE;
 DEFINE FIELD OVERWRITE role ON TABLE user TYPE string 
 DEFAULT 'user'
@@ -51,6 +52,8 @@ DEFINE FIELD OVERWRITE created_at ON TABLE session TYPE datetime
 VALUE time::now() READONLY;
 DEFINE FIELD OVERWRITE expires_at ON TABLE session TYPE datetime
 VALUE time::now() + 2d READONLY;
+DEFINE FIELD OVERWRITE last_used_at ON TABLE session TYPE datetime 
+VALUE time::now();
 DEFINE FIELD OVERWRITE user ON TABLE session TYPE record<user>;
 DEFINE INDEX OVERWRITE unique ON TABLE session 
     FIELDS user, token, user_agent UNIQUE;
