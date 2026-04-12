@@ -1,4 +1,4 @@
-FROM rust:latest as builder
+FROM rust:latest
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
@@ -10,16 +10,7 @@ RUN cargo install --locked cargo-leptos
 WORKDIR /app
 COPY . .
 RUN rustup target add wasm32-unknown-unknown
-RUN cargo leptos build --release
-FROM debian:bookworm-slim
-WORKDIR /app
-RUN apt-get update && apt-get install -y \
-    openssl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/target/release/your_app_name /app/
-COPY --from=builder /app/target/site /app/site
+ENV LEPTOS_SITE_ROOT=target/site
+ENV LEPTOS_OUTPUT_NAME=your_app_name
 EXPOSE 3000
-ENV LEPTOS_SITE_ROOT=site
-RUN ls -R
-CMD ["/app/chara"]
+CMD ["cargo", "leptos", "serve", "--release"]
