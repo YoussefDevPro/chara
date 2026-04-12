@@ -1,4 +1,4 @@
-FROM rust:1.80-bookworm as builder
+FROM rust:latest as builder
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
@@ -21,4 +21,5 @@ COPY --from=builder /app/target/release/your_app_name /app/
 COPY --from=builder /app/target/site /app/site
 EXPOSE 3000
 ENV LEPTOS_SITE_ROOT=site
-CMD ["/app/your_app_name"]
+RUN ls -R
+CMD ["/app/chara"]
