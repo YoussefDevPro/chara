@@ -8,6 +8,8 @@ FROM rust:1.92.0-trixie as builder
 # Install cargo-binstall, which makes it easier to install other
 # cargo extensions like cargo-leptos
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
 
 # Install required tools
 RUN apt-get update -y \
@@ -24,6 +26,7 @@ RUN mkdir -p /app
 WORKDIR /app
 COPY . .
 
+RUN bun install 
 # Build the app
 RUN cargo leptos build --release -vv
 
@@ -55,5 +58,5 @@ EXPOSE 3000
 
 # -- NB: update binary name from "leptos_start" to match your app name in Cargo.toml --
 # Run the server
-CMD ["/app/chara"]
+CMD ["/app/server"]
 
