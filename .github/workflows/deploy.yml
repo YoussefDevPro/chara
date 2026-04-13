@@ -36,7 +36,7 @@ jobs:
 
       - name: Trigger Coolify Deployment
         env:
-          WEBHOOK_URL: ${{ secrets.COOLIFY_WEB_HOOK }}
+          WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
         run: |
           if [ -z "$WEBHOOK_URL" ]; then
