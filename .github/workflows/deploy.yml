@@ -23,8 +23,6 @@ jobs:
           else
             echo "SECRET IS LOADED (Length: ${#SECRET})"
           fi
-        env:
-          SECRET: ${{ secrets.COOLIFY_WEBHOOK }}
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
