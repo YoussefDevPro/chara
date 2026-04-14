@@ -29,6 +29,7 @@ ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc \
     CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc \
     CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++ \
     PKG_CONFIG_ALLOW_CROSS=1
+    LEPTOS_BIN_TARGET_TRIPLE=aarch64-unknown-linux-gnu
 
 WORKDIR /app
 
@@ -37,7 +38,7 @@ RUN bun install
 
 COPY . .
 
-RUN cargo leptos build --release --bin-target aarch64-unknown-linux-gnu
+RUN cargo leptos build --release -v 
 
 FROM --platform=linux/arm64 debian:trixie-slim as runtime
 WORKDIR /app
