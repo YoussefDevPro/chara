@@ -34,7 +34,7 @@ COPY . .
 
 RUN cargo leptos build --release --bin-target aarch64-unknown-linux-gnu
 
-FROM debian:trixie-slim as runtime
+FROM --platform=linux/arm64 debian:trixie-slim as runtime
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
