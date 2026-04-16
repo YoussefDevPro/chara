@@ -10,7 +10,7 @@ use crate::components::{
         theme_toggle::ThemeToggle,
     },
 };
-use components::CreateBaseDialog;
+use components::{BaseBox, CreateBaseDialog};
 use icons::{ArrowUpRight, FolderCode, Lock, Plus};
 use leptos::prelude::*;
 use server::{create_base, get_user_bases};
@@ -30,7 +30,7 @@ pub fn DashboardPage() -> impl IntoView {
 
     Effect::new(move || {
         if let Some(Err(_)) = bases.get() {
-            window().location().assign("/");
+            window().location().assign("/").unwrap();
         }
     });
 
@@ -142,23 +142,20 @@ pub fn DashboardPage() -> impl IntoView {
                                             {list
                                                 .into_iter()
                                                 .map(|base| {
-                                                    view! {
-                                                        <div class="p-2 border rounded-lg bg-card">
-                                                            <span class="font-bold">{base.name}</span>
-                                                            <span class="text-sm opacity-70 ml-2">{base.id}</span>
-                                                            <p class="text-xs text-muted-foreground">
-                                                                "Owner: " {base.owner_name}
-                                                            </p>
-                                                        </div>
-                                                    }
+                                                    view! { <BaseBox base=base /> }
                                                 })
                                                 .collect_view()}
                                         </div>
                                     }
                                         .into_any()
-                                },
+                                }
                                 Some(Err(_)) => {
-                                    view! { <p class="text-red-500">"Unauthentified ! you silly goober"</p> }.into_any()
+                                    view! {
+                                        <p class="text-red-500">
+                                            "Unauthentified ! you silly goober"
+                                        </p>
+                                    }
+                                        .into_any()
                                 }
                                 _ => {
                                     view! { <p class="text-red-500">"Unknown error"</p> }.into_any()

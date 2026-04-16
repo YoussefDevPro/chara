@@ -101,3 +101,16 @@ pub fn CreateBaseDialog(
         </Dialog>
     }
 }
+
+#[component]
+pub fn BaseBox(base: UserBase) -> impl IntoView {
+    view! {
+        <div
+            class="p-2 border rounded-lg bg-card"
+            on:click=move |_| { window().location().assign(format!("/base/{}", base.id).as_str()).unwrap() }
+        >
+            <span class="font-bold">{base.name}</span>
+            <p class="text-xs text-muted-foreground">"Owner: " {base.owner_name}</p>
+        </div>
+    }
+}
