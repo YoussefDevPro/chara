@@ -18,14 +18,21 @@ use surrealdb::engine::local::{Db, Mem};
 pub mod error;
 pub use error::Irror;
 
-// use surrealdb::engine::remote::ws::{Client, Ws};
-// use surrealdb::opt::auth::Root;
+use surrealdb::engine::remote::ws::{Client, Ws};
+use surrealdb::opt::auth::Root;
 
-// pub static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init);
-pub static DB: LazyLock<Surreal<Db>> = LazyLock::new(Surreal::init);
+pub static DB: LazyLock<Surreal<Client>> = LazyLock::new(Surreal::init);
+//pub static DB: LazyLock<Surreal<Db>> = LazyLock::new(Surreal::init);
 
 pub async fn init() {
-    DB.connect::<Mem>(()).await.unwrap();
+    DB.connect::<Ws>(env_required!("DB_URL")).await.unwrap();
+    DB.signin(Root {
+        username: env_required!("DB_USERNAME"),
+        password: env_required!("DB_PASSWORD"),
+    })
+    .await
+    .unwrap();
+
     DB.use_ns("main").use_db("main").await.unwrap();
     DB.query(include_str!("../../SQL/main.surql"))
         .await

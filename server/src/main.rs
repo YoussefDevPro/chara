@@ -21,7 +21,9 @@ async fn main() {
         leptos_options,
         // NOTE: we only generate new keys for testing, soon we will have to store the key
         // somewhere else
-        key: Key::generate(),
+        // omg and i was wondering why it was not authentificating the user even after restarting
+        // the server, bruh
+        key: Key::from("zgj1s9526J0/ZYEhg1AaWhy1lcM6m9XDuxNM1weGFMpiljBRRnZ5JoQGvB21EXavRniJ+HuSew7rx0gDjXQKA==".as_bytes()),
     };
 
     let routes = generate_route_list(App);
