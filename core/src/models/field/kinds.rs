@@ -1,7 +1,8 @@
 use crate::models::ids::*;
+use serde::{Deserialize, Serialize};
 use surrealdb::types::SurrealValue;
 
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum FieldConfig {
     Text(TextConfig),
     Number(NumberConfig),
@@ -13,7 +14,7 @@ pub enum FieldConfig {
     Custom(CustomConfig),
 }
 
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TextConfig {
     SingleLine {
         default: Option<String>,
@@ -27,7 +28,7 @@ pub enum TextConfig {
     Phone,
 }
 
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum NumberConfig {
     Number {
         default: Option<usize>,
@@ -51,33 +52,33 @@ pub enum NumberConfig {
     },
 }
 
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum RatingIcon {
     Star,
     Heart,
 }
 
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SelectOption {
     pub id: u8,
     pub label: String,
     pub color: [u8; 6],
 }
 
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SelectConfig {
     Single { options: Vec<SelectOption> },
     Multi { options: Vec<SelectOption> },
 }
 
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum DateFormat {
     ISO,
     US,
     EU,
 }
 
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TimeUnits {
     Sec,
     Min,
@@ -88,7 +89,7 @@ pub enum TimeUnits {
     Year,
 }
 
-#[derive(SurrealValue, Debug, Clone, PartialEq)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum DatetimeConfig {
     Date {
         format: DateFormat,
@@ -100,14 +101,14 @@ pub enum DatetimeConfig {
     },
 }
 
-#[derive(SurrealValue, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum LinkType {
     OneToOne,
     OneToMany,
     ManyToMany,
 }
 
-#[derive(SurrealValue, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(SurrealValue, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum AggregateFunction {
     Count,
     Max,
@@ -119,7 +120,7 @@ pub enum AggregateFunction {
     AvgDistinct,
 }
 
-#[derive(Debug, Clone, PartialEq, SurrealValue)]
+#[derive(Debug, Clone, PartialEq, SurrealValue, Serialize, Deserialize)]
 pub enum RelationConfig {
     Link {
         target_table_id: TableId,
@@ -137,12 +138,12 @@ pub enum RelationConfig {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, SurrealValue)]
+#[derive(Debug, Clone, PartialEq, SurrealValue, Serialize, Deserialize)]
 pub enum UserConfig {
     User { is_multi: bool, notify: bool },
 }
 
-#[derive(Debug, Clone, PartialEq, SurrealValue)]
+#[derive(Debug, Clone, PartialEq, SurrealValue, Serialize, Deserialize)]
 pub enum ComputedTypes {
     Formula { expression: String },
     CreatedAt { format: DateFormat },
@@ -150,13 +151,13 @@ pub enum ComputedTypes {
     AutoNumber { prefix: Prefix, start_at: usize },
 }
 
-#[derive(Debug, Clone, PartialEq, SurrealValue, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, SurrealValue, Eq, Hash, Serialize, Deserialize)]
 pub enum Prefix {
     Dot,
     Star,
 }
 
-#[derive(Debug, Clone, PartialEq, SurrealValue)]
+#[derive(Debug, Clone, PartialEq, SurrealValue, Serialize, Deserialize)]
 pub enum CustomConfig {
     Attachment,
     JSON,

@@ -1,10 +1,11 @@
+use ::serde::{Deserialize, Serialize};
 use surrealdb::types::SurrealValue;
 use surrealdb::types::record_id::RecordId as Thing;
 
 macro_rules! define_ids {
     ($($name:ident),*) => {
         $(
-            #[derive(Debug, Clone, PartialEq, Eq, Hash, SurrealValue)]
+            #[derive(Debug, Clone, PartialEq, Eq, Hash, SurrealValue, Serialize, Deserialize)]
             pub struct $name(pub  Thing);
         )*
     };

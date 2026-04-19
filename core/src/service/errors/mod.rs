@@ -58,6 +58,9 @@ pub enum TableError {
 
     #[error("Failed to delete table")]
     DeleteFailed,
+
+    #[error("This action is unauthorized")]
+    Unauthorized,
 }
 
 #[derive(Error, Debug)]

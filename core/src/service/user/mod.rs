@@ -25,7 +25,6 @@ use base64::Engine;
 use base64::engine::general_purpose;
 use chrono::{DateTime, Utc};
 use rand::RngExt;
-use std::net::IpAddr;
 use std::time::{Duration, SystemTime};
 use surrealdb::opt::PatchOp;
 use surrealdb::types::SurrealValue;

@@ -22,13 +22,13 @@ pub struct Field {
 }
 
 pub struct InsertField {
-    pub(crate) name: String,
-    pub(crate) description: Option<String>,
-    pub(crate) is_primary: bool,
-    pub(crate) is_nullable: bool,
-    pub(crate) is_unique: bool,
-    pub(crate) order: u32,
-    pub(crate) config: FieldConfig,
+    pub name: String,
+    pub description: Option<String>,
+    pub is_primary: bool,
+    pub is_nullable: bool,
+    pub is_unique: bool,
+    pub order: u32,
+    pub config: FieldConfig,
 }
 
 pub struct FieldPatch {
