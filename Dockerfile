@@ -1,10 +1,5 @@
-# Use --platform=$BUILDPLATFORM to ensure the builder runs on the native architecture of the runner (usually amd64)
-# even when targeting arm64, which significantly speeds up the build via cross-compilation.
-FROM --platform=$BUILDPLATFORM rust:1.85-bookworm AS builder
-
-# Arguments for target platform
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
+# Use the standard Rust bookworm image for x86_64
+FROM rust:bookworm AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -37,26 +32,12 @@ RUN if [ -f bun.lock ]; then bun install; \
 # Copy source code
 COPY . .
 
-# Set architecture-specific build environment and build
-RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-    apt-get update && apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu && \
-    rustup target add aarch64-unknown-linux-gnu && \
-    export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc && \
-    export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc && \
-    export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++ && \
-    export PKG_CONFIG_ALLOW_CROSS=1 && \
-    cargo leptos build --release --bin-target aarch64-unknown-linux-gnu; \
-    else \
-    cargo leptos build --release; \
-    fi
+# Build the application for x86_64
+RUN cargo leptos build --release
 
 # Normalize artifacts path
 RUN mkdir -p /app/out && \
-    if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-        cp target/aarch64-unknown-linux-gnu/release/server /app/out/chara; \
-    else \
-        cp target/release/server /app/out/chara; \
-    fi && \
+    cp target/release/server /app/out/chara && \
     cp -r target/site /app/out/site
 
 # Runtime stage
