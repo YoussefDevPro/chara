@@ -1,6 +1,6 @@
 # Use --platform=$BUILDPLATFORM to ensure the builder runs on the native architecture of the runner (usually amd64)
 # even when targeting arm64, which significantly speeds up the build via cross-compilation.
-FROM --platform=$BUILDPLATFORM rust:1.81-bookworm AS builder
+FROM --platform=$BUILDPLATFORM rust:1.85-bookworm AS builder
 
 # Arguments for target platform
 ARG TARGETPLATFORM
