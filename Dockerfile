@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM rust:1.92.0-trixie as builder
+FROM rust:1.92.0-trixie as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -14,9 +14,6 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
     dpkg --add-architecture arm64 && \
     apt-get update && apt-get install -y libssl-dev:arm64 && \
     rustup target add aarch64-unknown-linux-gnu && \
-    rm -rf /var/lib/apt/lists/*; \
-    else \
-    rustup target add x86_64-unknown-linux-gnu && \
     rm -rf /var/lib/apt/lists/*; \
     fi
 
@@ -44,17 +41,25 @@ ENV PKG_CONFIG_ALLOW_CROSS=1
 
 WORKDIR /app
 
-COPY package.json bun.lockb* ./
+COPY package.json bun.lockb* pnpm-lock.yaml* ./
 RUN bun install
 
-COPY . .
+COPY Cargo.toml Cargo.lock ./
+COPY app ./app
+COPY frontend ./frontend
+COPY server ./server
+COPY core ./core
+COPY style ./style
+COPY public ./public
+COPY tailwind.config.js tsconfig.json ui_config.toml ./
 
-# Build with cargo-leptos (will use native/target as appropriate)
-RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-    LEPTOS_BIN_TARGET_TRIPLE=aarch64-unknown-linux-gnu cargo leptos build --release -vv; \
-    else \
-    cargo leptos build --release -vv; \
-    fi
+# Set environment for leptos build
+ENV RUST_BACKTRACE=full
+ENV LEPTOS_OUTPUT_NAME=chara
+ENV LEPTOS_SITE_ROOT=target/site
+
+# Build with cargo-leptos
+RUN cargo leptos build --release
 
 # Runtime stage
 FROM debian:trixie-slim as runtime
@@ -65,9 +70,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy artifacts based on target platform
-ARG TARGETPLATFORM
-COPY --from=builder /app/target/*/release/server /app/chara
+# Copy artifacts
+COPY --from=builder /app/target/release/server /app/chara
 COPY --from=builder /app/target/site /app/site
 
 ENV RUST_LOG="info"
