@@ -1,4 +1,4 @@
-FROM rust:1.92.0-trixie as builder
+FROM rust:1.92.0-trixie AS builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
