@@ -1,78 +1,75 @@
-FROM rust:1.92.0-trixie AS builder
+# Use --platform=$BUILDPLATFORM to ensure the builder runs on the native architecture of the runner (usually amd64)
+# even when targeting arm64, which significantly speeds up the build via cross-compilation.
+FROM --platform=$BUILDPLATFORM rust:1.81-bookworm AS builder
 
+# Arguments for target platform
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 
-# Install base dependencies
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
     curl unzip clang pkg-config libssl-dev build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install cross-compilation toolchain based on target
-RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-    apt-get update && apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu && \
-    dpkg --add-architecture arm64 && \
-    apt-get update && apt-get install -y libssl-dev:arm64 && \
-    rustup target add aarch64-unknown-linux-gnu && \
-    rm -rf /var/lib/apt/lists/*; \
-    fi
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs
 
-ENV NVM_DIR=/root/.nvm
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash \
-    && . "$NVM_DIR/nvm.sh" \
-    && nvm install 24 \
-    && nvm use 24 \
-    && nvm alias default 24
-
-ENV PATH="$NVM_DIR/versions/node/v24.14.1/bin:$PATH"
-
+# Install Bun
 RUN curl -fsSL https://bun.sh/install | bash
 ENV PATH="/root/.bun/bin:$PATH"
 
+# Install cargo-binstall and cargo-leptos
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 RUN cargo binstall cargo-leptos -y
-RUN rustup target add wasm32-unknown-unknown
 
-# Set up cross-compilation for ARM64
-ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
-ENV CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
-ENV CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
-ENV PKG_CONFIG_ALLOW_CROSS=1
+# Add wasm target
+RUN rustup target add wasm32-unknown-unknown
 
 WORKDIR /app
 
-COPY package.json bun.lockb* pnpm-lock.yaml* ./
-RUN bun install
+# Install JS dependencies
+COPY package.json bun.lock* pnpm-lock.yaml* ./
+RUN if [ -f bun.lock ]; then bun install; \
+    elif [ -f pnpm-lock.yaml ]; then npm install -g pnpm && pnpm install; \
+    else npm install; fi
 
-COPY Cargo.toml Cargo.lock ./
-COPY app ./app
-COPY frontend ./frontend
-COPY server ./server
-COPY core ./core
-COPY style ./style
-COPY public ./public
-COPY tailwind.config.js tsconfig.json ui_config.toml ./
+# Copy source code
+COPY . .
 
-# Set environment for leptos build
-ENV RUST_BACKTRACE=full
-ENV LEPTOS_OUTPUT_NAME=chara
-ENV LEPTOS_SITE_ROOT=target/site
+# Set architecture-specific build environment and build
+RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+    apt-get update && apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu && \
+    rustup target add aarch64-unknown-linux-gnu && \
+    export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc && \
+    export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc && \
+    export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++ && \
+    export PKG_CONFIG_ALLOW_CROSS=1 && \
+    cargo leptos build --release --bin-target aarch64-unknown-linux-gnu; \
+    else \
+    cargo leptos build --release; \
+    fi
 
-# Build with cargo-leptos
-RUN cargo leptos build --release
+# Normalize artifacts path
+RUN mkdir -p /app/out && \
+    if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+        cp target/aarch64-unknown-linux-gnu/release/server /app/out/chara; \
+    else \
+        cp target/release/server /app/out/chara; \
+    fi && \
+    cp -r target/site /app/out/site
 
 # Runtime stage
-FROM debian:trixie-slim as runtime
+FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl ca-certificates libgcc-s1 \
-    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy artifacts
-COPY --from=builder /app/target/release/server /app/chara
-COPY --from=builder /app/target/site /app/site
+# Copy artifacts from the builder's out directory
+COPY --from=builder /app/out/ /app/
 
 ENV RUST_LOG="info"
 ENV LEPTOS_SITE_ADDR="0.0.0.0:3000"
