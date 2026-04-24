@@ -5,7 +5,6 @@ use crate::service::table::migration::MigrationStrategy;
 use serde::{Deserialize, Serialize};
 use surrealdb::types::Datetime;
 use surrealdb::types::SurrealValue;
-use surrealdb::types::ToSql;
 
 // TODO: gotta work here :sob:
 // fr :noooooovanish:
@@ -378,7 +377,8 @@ impl TableService {
             "
         };
 
-        let mut query = DB.query(query_str)
+        let mut query = DB
+            .query(query_str)
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("user", self.user.clone()))
             .bind(("record_id", record_id));
@@ -397,7 +397,9 @@ impl TableService {
     }
 
     pub async fn delete_record(&self, record_id: RecordId) -> Result<Record, Irror> {
-        let mut res = DB.query("
+        let mut res = DB
+            .query(
+                "
             BEGIN TRANSACTION;
             LET $is_owner = (SELECT VALUE owner FROM $table_id.base)[0] == $user;
             LET $has_table_edit = mod::bit::can(
@@ -410,11 +412,12 @@ impl TableService {
                 THROW 'Unauthorized';
             };
             COMMIT TRANSACTION;
-        ")
-        .bind(("table_id", self.table_record_id.clone()))
-        .bind(("user", self.user.clone()))
-        .bind(("record_id", record_id))
-        .await?;
+        ",
+            )
+            .bind(("table_id", self.table_record_id.clone()))
+            .bind(("user", self.user.clone()))
+            .bind(("record_id", record_id))
+            .await?;
 
         let deleted_record: Option<Record> = res.take(3)?;
 
@@ -485,7 +488,6 @@ impl TableService {
         field_id: FieldId,
         new_config: FieldConfig,
     ) -> Result<Result<Field, String>, Irror> {
-        // 1. Permissions
         let mut perm_res = DB
             .query("SELECT VALUE (SELECT VALUE owner FROM $base_id)[0] == $user OR mod::bit::can((SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $table_id)[0], 4)")
             .bind(("base_id", self.base.clone()))
@@ -495,7 +497,6 @@ impl TableService {
         if !perm_res.take::<Option<bool>>(0)?.unwrap_or(false) {
             return Err(Irror::Table(TableError::Unauthorized));
         }
-        // 2. Strategy Check
         let mut field_res = DB
             .query("SELECT * FROM $field_id WHERE table = $table_id")
             .bind(("field_id", field_id.clone()))
@@ -538,7 +539,6 @@ impl TableService {
             }
         }
 
-        // 4. Update Field Config
         let mut update_res = DB
             .query("UPDATE $field_id SET config = $new_config, updated_at = time::now()")
             .bind(("field_id", field_id))
