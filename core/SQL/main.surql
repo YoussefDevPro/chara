@@ -1,4 +1,4 @@
-DEFINE BUCKET OVERWRITE bucki BACKEND 'file:/home/yousafe/Dev/ext/chara/bit/'; 
+DEFINE BUCKET OVERWRITE bucki BACKEND 'file:/home/yousafe/'; 
 DEFINE MODULE OVERWRITE mod::bit AS f'bucki:/chaira-bitwise_ops-0.0.1.surli';
 
 -- USER 
@@ -207,3 +207,7 @@ DEFINE INDEX OVERWRITE user_field_idx ON TABLE can_access_field FIELDS in, out U
 
 -- for user -> user, we will base on the role, only an admin can do certain actions like deleting, updating, etc
 
+
+-- Performance Indexes
+DEFINE INDEX idx_field_table_created ON TABLE field FIELDS table, is_deleted, created_at;
+DEFINE INDEX idx_record_table_created ON TABLE record FIELDS table, is_deleted, created_at;

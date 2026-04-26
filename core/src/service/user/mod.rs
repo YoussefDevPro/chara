@@ -344,7 +344,7 @@ impl UserService {
                     WHERE in = $user 
                     AND mod::bit::can(perms, 2)
                 )
-            );
+            ) ORDER BY created_at ASC;
             ",
             )
             .bind(("user", self.user_record_id.clone()))

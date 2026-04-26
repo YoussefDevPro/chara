@@ -189,7 +189,7 @@ COMMIT TRANSACTION;
                     (SELECT VALUE perms FROM can_access_table WHERE in = $user AND out = $this.id)[0], 
                     2
                 )
-            );
+            ) ORDER BY created_at ASC;
         ")
         .bind(("user", self.user.clone()))
         .bind(("base", self.base_record_id.clone()))

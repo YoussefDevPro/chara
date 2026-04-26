@@ -7,7 +7,7 @@ use surrealdb::types::{Datetime, SurrealValue};
 // Only authorized users of the parent Base (typically the workspace owner or admins)
 // may modify or soft-delete a Table.
 
-#[derive(Debug, Clone, PartialEq, SurrealValue)]
+#[derive(Debug, Clone, PartialEq, SurrealValue, serde::Serialize, serde::Deserialize)]
 pub struct Table {
     pub id: Option<TableId>,
     pub created_at: Datetime,

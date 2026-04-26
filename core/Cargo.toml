@@ -17,7 +17,7 @@ serde_json.workspace = true
 chrono.workspace = true
 serde.workspace = true
 bitmask.workspace = true
-ordered-float.workspace = true
+ordered-float = { workspace = true, features = ["serde"] }
 mime.workspace = true 
 mime_serde_shim.workspace = true
 uuid.workspace = true

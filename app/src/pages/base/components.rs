@@ -9,7 +9,7 @@ use crate::components::ui::{
 };
 use leptos::prelude::*;
 
-use super::server::BaseTable;
+use super::server::{BaseTable, TableField};
 
 #[component]
 pub fn CreateTableDialog(
@@ -98,6 +98,53 @@ pub fn CreateTableDialog(
 }
 
 #[component]
+pub fn CreateFieldDialog(
+    title: impl IntoView + 'static,
+    create_action: Action<String, Result<TableField, ServerFnError>>,
+) -> impl IntoView {
+    let name = RwSignal::new("".to_string());
+
+    view! {
+        <Dialog>
+            <DialogTrigger class="p-0 h-8 w-8 flex items-center justify-center border-0 bg-transparent hover:bg-accent text-muted-foreground hover:text-foreground">
+                {title}
+            </DialogTrigger>
+            <DialogContent class="sm:max-w-[425px]">
+                <DialogBody>
+                    <DialogHeader>
+                        <DialogTitle>"Add a Field"</DialogTitle>
+                        <DialogDescription>
+                            "Enter a name for the new text field."
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div class="flex flex-col gap-4 justify-center">
+                        <div class="flex flex-col gap-2">
+                            <Label html_for="field-name">Name</Label>
+                            <Input bind_value=name id="field-name" />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <DialogClose class="w-full sm:w-fit">"Cancel"</DialogClose>
+                        <Button
+                            attr:r#type="button"
+                            attr:disabled=move || create_action.pending().get()
+                            on:click=move |_| {
+                                create_action.dispatch(name.get());
+                                name.set("".to_string());
+                            }
+                        >
+                            "Add Field"
+                        </Button>
+                    </DialogFooter>
+                </DialogBody>
+            </DialogContent>
+        </Dialog>
+    }
+}
+
+#[component]
 pub fn TableBox(table: BaseTable) -> impl IntoView {
     view! {
         <div
@@ -105,7 +152,7 @@ pub fn TableBox(table: BaseTable) -> impl IntoView {
             on:click=move |_| {
                 window()
                     .location()
-                    .assign(format!("/base/tables/{}", table.id.clone()).as_str())
+                    .assign(format!("/base/{}", table.id.clone()).as_str())
                     .unwrap()
             }
         >
