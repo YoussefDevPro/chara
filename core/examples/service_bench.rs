@@ -36,6 +36,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     test_crypter().await?;
     let (user_service, user_id) = test_user_service().await?;
     let (base_service, base_id) = test_base_service(&user_service, &user_id).await?;
+    test_api_tokens(&user_service).await?;
+
     test_table_service(&base_service, &user_id, &base_id).await?;
     test_misc().await?;
 
@@ -724,6 +726,46 @@ async fn run_benchmarks() -> Result<(), Box<dyn std::error::Error>> {
         iterations,
         duration,
         duration / iterations
+    );
+
+    Ok(())
+}
+
+async fn test_api_tokens(user_service: &UserService) -> Result<(), Box<dyn std::error::Error>> {
+    let start = Instant::now();
+
+    // 1. Generate the token using the service
+    let raw_token = user_service.create_api_token().await?;
+    let duration = start.elapsed();
+
+    // 2. Verify the token exists in the DB.
+    // We must hash the raw_token in the query to match the stored hash
+    let mut res = DB
+        .query("SELECT VALUE user FROM api_token WHERE `token` = crypto::sha512($tokenn) AND is_deleted = false")
+        .bind(("tokenn", raw_token.clone()))
+        .await?;
+
+    let owner_id: Option<UserId> = res.take(0)?;
+
+    // 3. Assertions
+    assert!(owner_id.is_some(), "Token was not found in the database");
+    assert_eq!(
+        owner_id.unwrap().0,
+        user_service.user_record_id.0,
+        "Token owner does not match current user"
+    );
+
+    print_bench_table(
+        "UserService: API Tokens",
+        vec![
+            ("Generated Token".to_string(), raw_token),
+            (
+                "DB Verification".to_string(),
+                "Passed (SHA-512 Match)".to_string(),
+            ),
+            ("Owner Match".to_string(), "Verified".to_string()),
+        ],
+        duration,
     );
 
     Ok(())

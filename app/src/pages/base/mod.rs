@@ -9,16 +9,16 @@ use crate::components::{
         empty::*,
         theme_toggle::ThemeToggle,
         table::*,
-        dropdown_menu::*,
-        alert_dialog::*,
     },
 };
-use components::{CreateTableDialog, CreateFieldDialog};
-use icons::{Ellipsis, FolderCode, Lock, Plus, Trash};
+use components::CreateTableDialog;
+use icons::{
+    AlignLeft, Calendar, Cpu, FolderCode, Globe, Hash, Link, List, Lock, Mail, Phone, Plus,
+    Settings, Type, User,
+};
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
-use server::{create_table_in_base, get_base_tables, get_table_data, update_record_cell, delete_record, create_record, create_field, TableData};
-use leptos::portal::Portal;
+use server::{create_table_in_base, get_base_tables, get_table_data, TableData};
 
 mod components;
 pub mod server;
@@ -208,6 +208,27 @@ pub fn BasePage() -> impl IntoView {
 }
 
 #[component]
+fn FieldIcon(config: charac::models::field::FieldConfig) -> impl IntoView {
+    use charac::models::field::{FieldConfig, TextConfig};
+    match config {
+        FieldConfig::Text(t) => match t {
+            TextConfig::SingleLine { .. } => view! { <Type class="size-4" /> }.into_any(),
+            TextConfig::LongText { .. } => view! { <AlignLeft class="size-4" /> }.into_any(),
+            TextConfig::Email => view! { <Mail class="size-4" /> }.into_any(),
+            TextConfig::URL => view! { <Globe class="size-4" /> }.into_any(),
+            TextConfig::Phone => view! { <Phone class="size-4" /> }.into_any(),
+        },
+        FieldConfig::Number(_) => view! { <Hash class="size-4" /> }.into_any(),
+        FieldConfig::Select(_) => view! { <List class="size-4" /> }.into_any(),
+        FieldConfig::Datetime(_) => view! { <Calendar class="size-4" /> }.into_any(),
+        FieldConfig::Relation(_) => view! { <Link class="size-4" /> }.into_any(),
+        FieldConfig::User(_) => view! { <User class="size-4" /> }.into_any(),
+        FieldConfig::Computed(_) => view! { <Cpu class="size-4" /> }.into_any(),
+        FieldConfig::Custom(_) => view! { <Settings class="size-4" /> }.into_any(),
+    }
+}
+
+#[component]
 fn TableGrid(base_id: String, table_id: String) -> impl IntoView {
     let base_id_sv = StoredValue::new(base_id);
     let table_id_sv = StoredValue::new(table_id);
@@ -217,76 +238,11 @@ fn TableGrid(base_id: String, table_id: String) -> impl IntoView {
         |(b_id, t_id)| async move { get_table_data(b_id, t_id).await },
     );
 
-    let local_data = RwSignal::new(None::<TableData>);
-
-    // Update local data when resource finishes
-    Effect::new(move |_| {
-        if let Some(Ok(data)) = table_data_res.get() {
-            local_data.set(Some(data));
-        }
-    });
-
-    let create_record_action = Action::new(move |_: &()| {
-        let b_id = base_id_sv.get_value();
-        let t_id = table_id_sv.get_value();
-        async move { create_record(b_id, t_id).await }
-    });
-
-    let create_field_action = Action::new(move |name: &String| {
-        let name = name.clone();
-        let b_id = base_id_sv.get_value();
-        let t_id = table_id_sv.get_value();
-        async move { create_field(b_id, t_id, name).await }
-    });
-
-    Effect::new(move |_| {
-        if let Some(Ok(new_record)) = create_record_action.value().get() {
-            local_data.update(|data| {
-                if let Some(d) = data {
-                    d.records.push(new_record);
-                }
-            });
-        }
-    });
-
-    Effect::new(move |_| {
-        if let Some(Ok(new_field)) = create_field_action.value().get() {
-            local_data.update(|data| {
-                if let Some(d) = data {
-                    d.fields.push(new_field);
-                }
-            });
-        }
-    });
-
-    let on_delete_record = move |rid: String| {
-        local_data.update(|data| {
-            if let Some(d) = data {
-                d.records.retain(|r| r.id != rid);
-            }
-        });
-    };
-
-    let on_update_cell = move |rid: String, fname: String, val: String| {
-        local_data.update(|data| {
-            if let Some(d) = data {
-                if let Some(r) = d.records.iter_mut().find(|r| r.id == rid) {
-                    r.cells.insert(fname, val);
-                }
-            }
-        });
-    };
-
     view! {
         <Suspense fallback=|| view! { <p>"Loading table data..."</p> }>
             {move || {
-                let data_opt = local_data.get().or_else(|| {
-                    table_data_res.get().and_then(|r| r.ok())
-                });
-
-                if let Some(data) = data_opt {
+                if let Some(Ok(data)) = table_data_res.get() {
                     let fields_sv = StoredValue::new(data.fields.clone());
-                    let column_count = data.fields.len() + 1;
                     view! {
                         <TableWrapper class="w-full">
                             <Table class="w-full max-w-none">
@@ -297,19 +253,14 @@ fn TableGrid(base_id: String, table_id: String) -> impl IntoView {
                                             .map(|field| {
                                                 view! {
                                                     <TableHead class="font-bold border-r last:border-r-0">
-                                                        {field.name.clone()}
+                                                        <div class="flex items-center gap-2">
+                                                            <FieldIcon config=field.config.clone() />
+                                                            {field.name.clone()}
+                                                        </div>
                                                     </TableHead>
                                                 }
                                             })
                                             .collect_view()}
-                                        <TableHead class="w-10 p-0 text-center">
-                                            <div class="flex items-center justify-center h-full border-l">
-                                                <CreateFieldDialog
-                                                    title=view! { <Plus class="size-4" /> }.into_any()
-                                                    create_action=create_field_action
-                                                />
-                                            </div>
-                                        </TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -319,14 +270,12 @@ fn TableGrid(base_id: String, table_id: String) -> impl IntoView {
                                         let:record
                                     >
                                         {
-                                            let record_id = record.id.clone();
                                             let record_cells = record.cells.clone();
                                             view! {
                                                 <TableRow>
                                                     {fields_sv.get_value()
                                                         .into_iter()
                                                         .map({
-                                                            let record_id = record_id.clone();
                                                             let record_cells = record_cells.clone();
                                                             move |field| {
                                                                 let field_name = field.name.clone();
@@ -334,52 +283,20 @@ fn TableGrid(base_id: String, table_id: String) -> impl IntoView {
                                                                     .get(&field_name)
                                                                     .cloned()
                                                                     .unwrap_or_default();
-                                                                let rid_for_cell = record_id.clone();
-                                                                let rid_for_callback = record_id.clone();
-                                                                let fname_for_cell = field_name.clone();
-                                                                let fname_for_callback = field_name.clone();
                                                                 view! {
-                                                                    <EditableCell
-                                                                        base_id=base_id_sv.get_value()
-                                                                        table_id=table_id_sv.get_value()
-                                                                        record_id=rid_for_cell
-                                                                        field_name=fname_for_cell
-                                                                        initial_value=value
-                                                                        on_success=Callback::new({
-                                                                            let rid = rid_for_callback.clone();
-                                                                            let fname = fname_for_callback.clone();
-                                                                            move |v| on_update_cell(rid.clone(), fname.clone(), v)
-                                                                        })
-                                                                    />
+                                                                    <TableCell class="px-3 py-0 h-10 border-r last:border-r-0 overflow-hidden whitespace-nowrap text-ellipsis">
+                                                                        <div class="flex items-center h-full">
+                                                                            {value}
+                                                                        </div>
+                                                                    </TableCell>
                                                                 }
                                                             }
                                                         })
                                                         .collect_view()}
-                                                    <TableCell class="p-0 text-center border-l">
-                                                        <RecordActions
-                                                            base_id=base_id_sv.get_value()
-                                                            table_id=table_id_sv.get_value()
-                                                            record_id=record_id.clone()
-                                                            on_delete=Callback::new(move |rid| on_delete_record(rid))
-                                                        />
-                                                    </TableCell>
                                                 </TableRow>
                                             }
                                         }
                                     </For>
-                                    <TableRow
-                                        class="cursor-pointer group/add-row hover:bg-muted/50 transition-colors"
-                                        on:click=move |_| {
-                                            create_record_action.dispatch(());
-                                        }
-                                    >
-                                        <TableCell class="p-0 border-t" attr:colspan=column_count>
-                                            <div class="flex items-center gap-2 px-3 py-2 text-muted-foreground group-hover/add-row:text-foreground transition-colors h-10">
-                                                <Plus class="size-4" />
-                                                <span>"Add Record"</span>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
                                 </TableBody>
                             </Table>
                         </TableWrapper>
@@ -394,182 +311,3 @@ fn TableGrid(base_id: String, table_id: String) -> impl IntoView {
     }
 }
 
-#[component]
-fn EditableCell(
-    base_id: String,
-    table_id: String,
-    record_id: String,
-    field_name: String,
-    initial_value: String,
-    on_success: Callback<String>,
-) -> impl IntoView {
-    let (is_editing, set_is_editing) = signal(false);
-    let (value, set_value) = signal(initial_value.clone());
-    let (pending, set_pending) = signal(false);
-
-    let save_action = Action::new(
-        move |(b_id, t_id, r_id, f_name, val): &(String, String, String, String, String)| {
-            let b_id = b_id.clone();
-            let t_id = t_id.clone();
-            let r_id = r_id.clone();
-            let f_name = f_name.clone();
-            let val = val.clone();
-            async move { update_record_cell(b_id, t_id, r_id, f_name, val).await }
-        },
-    );
-
-    let base_id = StoredValue::new(base_id);
-    let table_id = StoredValue::new(table_id);
-    let record_id = StoredValue::new(record_id);
-    let field_name = StoredValue::new(field_name);
-    let initial_value_sv = StoredValue::new(initial_value);
-
-    let handle_save = move || {
-        let current_val = value.get();
-        if current_val != initial_value_sv.get_value() {
-            set_pending.set(true);
-            save_action.dispatch((
-                base_id.get_value(),
-                table_id.get_value(),
-                record_id.get_value(),
-                field_name.get_value(),
-                current_val,
-            ));
-        }
-        set_is_editing.set(false);
-    };
-
-    let handle_save_sv = StoredValue::new(handle_save);
-
-    Effect::new(move |_| {
-        if let Some(res) = save_action.value().get() {
-            set_pending.set(false);
-            match res {
-                Ok(_) => {
-                    on_success.run(value.get_untracked());
-                }
-                Err(e) => {
-                    println!("Error saving cell: {:?}", e);
-                    set_value.set(initial_value_sv.get_value());
-                }
-            }
-        }
-    });
-
-    view! {
-        <TableCell
-            class="p-0 border-r last:border-r-0 h-10 group relative"
-            on:click=move |_| set_is_editing.set(true)
-        >
-            {move || {
-                if is_editing.get() {
-                    view! {
-                        <input
-                            class="absolute inset-0 w-full h-full px-3 py-0 outline-none border-none ring-0 bg-neutral-100 dark:bg-neutral-800 focus:bg-neutral-200 dark:focus:bg-neutral-700 transition-colors"
-                            prop:value=move || value.get()
-                            on:input=move |ev| set_value.set(event_target_value(&ev))
-                            on:blur=move |_| handle_save_sv.get_value()()
-                            on:keydown=move |ev: web_sys::KeyboardEvent| {
-                                if ev.key() == "Enter" {
-                                    handle_save_sv.get_value()();
-                                } else if ev.key() == "Escape" {
-                                    set_value.set(initial_value_sv.get_value());
-                                    set_is_editing.set(false);
-                                }
-                            }
-                            autofocus="true"
-                        />
-                    }
-                        .into_any()
-                } else {
-                    view! {
-                        <div class="px-3 py-0 w-full h-full flex items-center overflow-hidden whitespace-nowrap text-ellipsis">
-                            <span class=move || if pending.get() { "opacity-50" } else { "" }>
-                                {move || value.get()}
-                            </span>
-                        </div>
-                    }
-                        .into_any()
-                }
-            }}
-        </TableCell>
-    }
-}
-
-#[component]
-fn RecordActions(
-    base_id: String,
-    table_id: String,
-    record_id: String,
-    on_delete: Callback<String>,
-) -> impl IntoView {
-    let base_id_sv = StoredValue::new(base_id);
-    let table_id_sv = StoredValue::new(table_id);
-    let record_id_sv = StoredValue::new(record_id);
-
-    let delete_record_action = Action::new(
-        move |(b_id, t_id, r_id): &(String, String, String)| {
-            let b_id = b_id.clone();
-            let t_id = t_id.clone();
-            let r_id = r_id.clone();
-            async move { delete_record(b_id, t_id, r_id).await }
-        },
-    );
-
-    Effect::new(move |_| {
-        if let Some(Ok(_)) = delete_record_action.value().get() {
-            on_delete.run(record_id_sv.get_value());
-        }
-    });
-
-    view! {
-        <DropdownMenu>
-            <DropdownMenuTrigger class="p-0 w-8 h-8 flex items-center justify-center border-0 bg-transparent hover:bg-accent rounded-none">
-                <Ellipsis class="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent class="w-[160px]">
-                <DropdownMenuLabel>"Actions"</DropdownMenuLabel>
-                <DropdownMenuGroup class="mt-2">
-                    <DropdownMenuItem class="p-0">
-                        <AlertDialog class="w-full">
-                            <AlertDialogTrigger class="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10">
-                                <Trash class="size-4" />
-                                <span>"Delete"</span>
-                            </AlertDialogTrigger>
-                            <Portal>
-                                <AlertDialogContent class="w-[425px]">
-                                    <AlertDialogBody>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>"Are you sure?"</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                "This action cannot be undone. This will permanently delete this record."
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogClose>"Cancel"</AlertDialogClose>
-                                            <Button
-                                                variant=ButtonVariant::Destructive
-                                                on:click={
-                                                    move |_| {
-                                                        delete_record_action
-                                                            .dispatch((
-                                                                base_id_sv.get_value(),
-                                                                table_id_sv.get_value(),
-                                                                record_id_sv.get_value(),
-                                                            ));
-                                                    }
-                                                }
-                                            >
-                                                "Delete"
-                                            </Button>
-                                        </AlertDialogFooter>
-                                    </AlertDialogBody>
-                                </AlertDialogContent>
-                            </Portal>
-                        </AlertDialog>
-                    </DropdownMenuItem>
-                </DropdownMenuGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    }
-}

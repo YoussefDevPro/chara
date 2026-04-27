@@ -55,7 +55,7 @@ pub enum AuthMethod {
 #[derive(Debug)]
 pub struct UserService {
     pub user: User,
-    user_record_id: UserId,
+    pub user_record_id: UserId,
     pub current_base: Option<BaseService>,
 }
 
@@ -341,7 +341,7 @@ impl UserService {
                 OR (SELECT VALUE role FROM $user)[0] == 'admin'
                 OR id IN (
                     SELECT VALUE out FROM can_access_base 
-                    WHERE in = $user 
+                    WHERE in = $user
                     AND mod::bit::can(perms, 2)
                 )
             ) ORDER BY created_at ASC;
@@ -351,6 +351,18 @@ impl UserService {
             .await?;
         let bases: Vec<Base> = res.take(0)?;
         Ok(bases)
+    }
+
+    pub async fn create_api_token(&self) -> Result<String, Irror> {
+        let bytes: Vec<u8> = (0..32).map(|_| rand::rng().random()).collect();
+        let raw_token = general_purpose::STANDARD.encode(bytes).to_string();
+        let res = DB
+            .query("CREATE api_token SET user = $user, `token` = $tokenn")
+            .bind(("user", self.user_record_id.clone())) //
+            .bind(("tokenn", raw_token.clone()))
+            .await?;
+        res.check().map_err(|e| Irror::Db(e.to_string()))?;
+        Ok(raw_token)
     }
 }
 

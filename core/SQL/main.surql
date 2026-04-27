@@ -205,6 +205,16 @@ DEFINE TABLE OVERWRITE can_access_field TYPE RELATION
 DEFINE FIELD OVERWRITE perms ON TABLE can_access_field TYPE int;
 DEFINE INDEX OVERWRITE user_field_idx ON TABLE can_access_field FIELDS in, out UNIQUE;
 
+DEFINE TABLE OVERWRITE api_token SCHEMAFULL;
+DEFINE FIELD OVERWRITE token ON TABLE api_token TYPE string  VALUE crypto::sha512($value);
+DEFINE FIELD OVERWRITE user ON TABLE api_token TYPE record<user>;
+DEFINE FIELD OVERWRITE created_at ON TABLE api_token TYPE datetime 
+VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE updated_at ON TABLE api_token TYPE datetime
+VALUE time::now();
+DEFINE FIELD OVERWRITE expires_at ON TABLE api_token VALUE time::now() + 7d;
+DEFINE FIELD OVERWRITE is_deleted ON TABLE api_token DEFAULT false;
+
 -- for user -> user, we will base on the role, only an admin can do certain actions like deleting, updating, etc
 
 
