@@ -69,7 +69,9 @@ pub fn DashboardPage() -> impl IntoView {
                     <Button
                         variant=ButtonVariant::Outline
                         size=ButtonSize::Sm
-                        on:click=move |_| {create_token_action.dispatch(());}
+                        on:click=move |_| {
+                            create_token_action.dispatch(());
+                        }
                         attr:disabled=move || create_token_action.pending().get()
                     >
                         {move || {
@@ -94,22 +96,37 @@ pub fn DashboardPage() -> impl IntoView {
                         </BreadcrumbList>
                     </Breadcrumb>
 
-                    {move || create_token_action.value().get().map(|res| {
-                        match res {
-                            Ok(token) => view! {
-                                <div class="p-4 border border-primary/20 bg-primary/5 rounded-lg flex flex-col gap-2">
-                                    <span class="text-xs font-bold uppercase tracking-wider opacity-60">"Your New API Token"</span>
-                                    <div class="flex gap-2 items-center">
-                                        <code class="bg-background p-2 rounded border flex-1 font-mono text-sm">
-                                            {token}
-                                        </code>
-                                        <p class="text-xs text-muted-foreground italic">"Make sure to copy this now. You won't see it again!"</p>
-                                    </div>
-                                </div>
-                            }.into_any(),
-                            Err(e) => view! { <p class="text-destructive">{e.to_string()}</p> }.into_any()
-                        }
-                    })}
+                    {move || {
+                        create_token_action
+                            .value()
+                            .get()
+                            .map(|res| {
+                                match res {
+                                    Ok(token) => {
+                                        view! {
+                                            <div class="p-4 border border-primary/20 bg-primary/5 rounded-lg flex flex-col gap-2">
+                                                <span class="text-xs font-bold uppercase tracking-wider opacity-60">
+                                                    "Your New API Token"
+                                                </span>
+                                                <div class="flex gap-2 items-center">
+                                                    <code class="bg-background p-2 rounded border flex-1 font-mono text-sm">
+                                                        {token}
+                                                    </code>
+                                                    <p class="text-xs text-muted-foreground italic">
+                                                        "Make sure to copy this now. You won't see it again!"
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        }
+                                            .into_any()
+                                    }
+                                    Err(e) => {
+                                        view! { <p class="text-destructive">{e.to_string()}</p> }
+                                            .into_any()
+                                    }
+                                }
+                            })
+                    }}
 
                     <div class="flex gap-4 justify-end">
                         <CreateBaseDialog

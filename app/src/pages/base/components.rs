@@ -98,6 +98,60 @@ pub fn CreateTableDialog(
 }
 
 #[component]
+pub fn CreateFieldDialog(
+    title: impl IntoView + 'static,
+    create_action: Action<String, Result<super::server::TableField, ServerFnError>>,
+) -> impl IntoView {
+    let name = RwSignal::new("".to_string());
+
+    view! {
+        <Dialog>
+            <DialogTrigger>{title}</DialogTrigger>
+            <DialogContent class="sm:max-w-[425px]">
+                <DialogBody>
+                    <DialogHeader>
+                        <DialogTitle>"Add a Field"</DialogTitle>
+                        <DialogDescription>
+                            "Give your field a name to organize your data."
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div class="flex flex-col gap-4 justify-center">
+                        <div class="flex flex-col gap-2">
+                            <Label html_for="field-name">Name</Label>
+                            <Input
+                                id="field-name"
+                                bind_value=name
+                                on:keydown=move |ev| {
+                                    if ev.key() == "Enter" && !name.get().is_empty() {
+                                        create_action.dispatch(name.get());
+                                        name.set("".to_string());
+                                    }
+                                }
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <DialogClose class="w-full sm:w-fit">"Cancel"</DialogClose>
+                        <Button
+                            attr:r#type="button"
+                            attr:disabled=move || create_action.pending().get() || name.get().is_empty()
+                            on:click=move |_| {
+                                create_action.dispatch(name.get());
+                                name.set("".to_string());
+                            }
+                        >
+                            "Add Field"
+                        </Button>
+                    </DialogFooter>
+                </DialogBody>
+            </DialogContent>
+        </Dialog>
+    }
+}
+
+#[component]
 pub fn TableBox(table: BaseTable) -> impl IntoView {
     view! {
         <div

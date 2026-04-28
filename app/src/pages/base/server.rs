@@ -36,9 +36,13 @@ pub async fn get_base_tables(base_id: String) -> Result<Vec<BaseTable>, ServerFn
     let service = crate::get_authenticated_service().await?;
     let mut user_service = service;
 
-    let base_record_id = RecordId::parse_simple(format!("base:{}", base_id.as_str()).as_str())
-        .ok()
-        .ok_or(ServerFnError::new("coudlnt parse the base id"))?;
+    let base_record_id = if base_id.contains(':') {
+        RecordId::parse_simple(&base_id)
+    } else {
+        RecordId::parse_simple(format!("base:{}", base_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the base id"))?;
 
     let base_id_typed = BaseId(base_record_id);
     user_service
@@ -82,9 +86,13 @@ pub async fn create_table_in_base(
     let service = crate::get_authenticated_service().await?;
     let mut user_service = service;
 
-    let base_record_id = RecordId::parse_simple(format!("base:{}", base_id.as_str()).as_str())
-        .ok()
-        .ok_or(ServerFnError::new("coudlnt parse the base id"))?;
+    let base_record_id = if base_id.contains(':') {
+        RecordId::parse_simple(&base_id)
+    } else {
+        RecordId::parse_simple(format!("base:{}", base_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the base id"))?;
 
     let base_id_typed = BaseId(base_record_id);
     user_service
@@ -119,11 +127,14 @@ pub async fn get_table_data(base_id: String, table_id: String) -> Result<TableDa
     let start = Instant::now();
 
     let mut user_service = crate::get_authenticated_service().await?;
-    dbg!(&base_id, &table_id);
 
-    let base_record_id = RecordId::parse_simple(format!("base:{}", base_id.as_str()).as_str())
-        .ok()
-        .ok_or(ServerFnError::new("coudlnt parse the base id"))?;
+    let base_record_id = if base_id.contains(':') {
+        RecordId::parse_simple(&base_id)
+    } else {
+        RecordId::parse_simple(format!("base:{}", base_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the base id"))?;
     let base_id_typed = BaseId(base_record_id);
 
     user_service
@@ -182,102 +193,6 @@ pub async fn get_table_data(base_id: String, table_id: String) -> Result<TableDa
 }
 
 #[server]
-pub async fn update_record_cell(
-    base_id: String,
-    table_id: String,
-    record_id: String,
-    field_name: String,
-    new_value: String,
-) -> Result<(), ServerFnError> {
-    use charac::db::DB;
-    use charac::models::field::{Field, FieldConfig};
-    use charac::models::ids::{BaseId, RecordId as CharacRecordId, TableId};
-    use charac::models::record::RecordPatch;
-    use charac::models::record::cell::CellValue;
-    use std::time::Instant;
-    use surrealdb::types::RecordId;
-
-    let start = Instant::now();
-    let service = crate::get_authenticated_service().await?;
-    let mut user_service = service;
-
-    let base_record_id = RecordId::parse_simple(format!("base:{}", base_id.as_str()).as_str())
-        .ok()
-        .ok_or(ServerFnError::new("coudlnt parse the base id"))?;
-    let base_id_typed = BaseId(base_record_id);
-
-    user_service
-        .open_base(base_id_typed)
-        .await
-        .map_err(|e| ServerFnError::new(format!("Opening Base failed: {e:?}")))?;
-
-    let table_record_id = RecordId::parse_simple(format!("table:{}", table_id.as_str()).as_str())
-        .ok()
-        .ok_or(ServerFnError::new("coudlnt parse the table id"))?;
-    let table_id_typed = TableId(table_record_id);
-
-    let table_service = user_service
-        .current_base
-        .as_ref()
-        .unwrap()
-        .open_table(table_id_typed.clone())
-        .await
-        .map_err(|e| ServerFnError::new(format!("{e:?}")))?;
-
-    // Fetch field config for validation
-    let mut res = DB
-        .query("SELECT * FROM field WHERE table = $table AND name = $name AND is_deleted = false")
-        .bind(("table", table_id_typed))
-        .bind(("name", field_name.clone()))
-        .await?;
-    let field: Field = res
-        .take::<Option<Field>>(0)?
-        .ok_or(ServerFnError::new("Field not found"))?;
-
-    // Validate and convert value
-    let value = match field.config {
-        FieldConfig::Text(_) => {
-            use charac::models::record::cell::{SingleLineValue, Value};
-            let v = SingleLineValue::new(None, Some(new_value))
-                .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
-            Value::SingleLine(v)
-        }
-        FieldConfig::Number(_) => {
-            use charac::models::record::cell::{NumberValue, Value};
-            let n = new_value
-                .parse::<usize>()
-                .map_err(|_| ServerFnError::new("Invalid number"))?;
-            let v = NumberValue::new(Some(n), None)
-                .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
-            Value::Number(v)
-        }
-        _ => {
-            use charac::models::record::cell::{SingleLineValue, Value};
-            let v = SingleLineValue::new(None, Some(new_value))
-                .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
-            Value::SingleLine(v)
-        }
-    };
-
-    let cell_value = CellValue::new(value);
-    let record_record_id = RecordId::parse_simple(&record_id)
-        .map_err(|_| ServerFnError::new("coudlnt parse the record id"))?;
-
-    table_service
-        .update_record(
-            CharacRecordId(record_record_id),
-            RecordPatch::new(Some(vec![(field_name, cell_value)])),
-        )
-        .await
-        .map_err(|e| ServerFnError::new(format!("{e:?}")))?;
-
-    let duration = start.elapsed().as_millis();
-    println!("[update_record_cell] finished in {}ms", duration);
-
-    Ok(())
-}
-
-#[server]
 pub async fn delete_record(
     base_id: String,
     table_id: String,
@@ -291,9 +206,13 @@ pub async fn delete_record(
     let service = crate::get_authenticated_service().await?;
     let mut user_service = service;
 
-    let base_record_id = RecordId::parse_simple(format!("base:{}", base_id.as_str()).as_str())
-        .ok()
-        .ok_or(ServerFnError::new("coudlnt parse the base id"))?;
+    let base_record_id = if base_id.contains(':') {
+        RecordId::parse_simple(&base_id)
+    } else {
+        RecordId::parse_simple(format!("base:{}", base_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the base id"))?;
     let base_id_typed = BaseId(base_record_id);
 
     user_service
@@ -301,9 +220,14 @@ pub async fn delete_record(
         .await
         .map_err(|e| ServerFnError::new(format!("{e}")))?;
 
-    let table_record_id = RecordId::parse_simple(format!("table:{}", table_id.as_str()).as_str())
-        .ok()
-        .ok_or(ServerFnError::new("coudlnt parse the table id"))?;
+    let table_record_id = if table_id.contains(':') {
+        RecordId::parse_simple(&table_id)
+    } else {
+        RecordId::parse_simple(format!("table:{}", table_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the table id"))?;
+
     let table_id_typed = TableId(table_record_id);
 
     let table_service = user_service
@@ -342,9 +266,13 @@ pub async fn create_record(
     let service = crate::get_authenticated_service().await?;
     let mut user_service = service;
 
-    let base_record_id = RecordId::parse_simple(format!("base:{}", base_id.as_str()).as_str())
-        .ok()
-        .ok_or(ServerFnError::new("coudlnt parse the base id"))?;
+    let base_record_id = if base_id.contains(':') {
+        RecordId::parse_simple(&base_id)
+    } else {
+        RecordId::parse_simple(format!("base:{}", base_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the base id"))?;
     let base_id_typed = BaseId(base_record_id);
 
     user_service
@@ -352,9 +280,14 @@ pub async fn create_record(
         .await
         .map_err(|e| ServerFnError::new(format!("{e}")))?;
 
-    let table_record_id = RecordId::parse_simple(format!("table:{}", table_id.as_str()).as_str())
-        .ok()
-        .ok_or(ServerFnError::new("coudlnt parse the table id"))?;
+    let table_record_id = if table_id.contains(':') {
+        RecordId::parse_simple(&table_id)
+    } else {
+        RecordId::parse_simple(format!("table:{}", table_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the table id"))?;
+
     let table_id_typed = TableId(table_record_id);
 
     let table_service = user_service
@@ -383,6 +316,215 @@ pub async fn create_record(
 }
 
 #[server]
+pub async fn update_record_cell(
+    base_id: String,
+    table_id: String,
+    record_id: String,
+    field_id: String,
+    new_value: String,
+) -> Result<(), ServerFnError> {
+    use charac::db::DB;
+    use charac::models::field::{Field, FieldConfig, NumberConfig, TextConfig};
+    use charac::models::ids::{BaseId, RecordId as CharacRecordId, TableId};
+    use charac::models::record::RecordPatch;
+    use charac::models::record::cell::{
+        CellValue, Email, LongTextValue, NumberValue, PhoneValue, SingleLineValue, UrlValue, Value,
+    };
+    use std::time::Instant;
+    use surrealdb::types::RecordId;
+
+    let start = Instant::now();
+    let service = crate::get_authenticated_service().await?;
+    let mut user_service = service;
+
+    let base_record_id = if base_id.contains(':') {
+        RecordId::parse_simple(&base_id)
+    } else {
+        RecordId::parse_simple(format!("base:{}", base_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the base id"))?;
+    let base_id_typed = BaseId(base_record_id);
+
+    user_service
+        .open_base(base_id_typed)
+        .await
+        .map_err(|e| ServerFnError::new(format!("Opening Base failed: {e:?}")))?;
+
+    let table_record_id = if table_id.contains(':') {
+        RecordId::parse_simple(&table_id)
+    } else {
+        RecordId::parse_simple(format!("table:{}", table_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the table id"))?;
+
+    let table_id_typed = TableId(table_record_id);
+
+    let table_service = user_service
+        .current_base
+        .as_ref()
+        .unwrap()
+        .open_table(table_id_typed.clone())
+        .await
+        .map_err(|e| ServerFnError::new(format!("{e:?}")))?;
+
+    // Fetch field config for validation
+    let field_record_id = RecordId::parse_simple(&field_id)
+        .map_err(|_| ServerFnError::new("Couldn't parse the field id"))?;
+
+    let mut res = DB
+        .query("SELECT * FROM $field WHERE table = $table AND is_deleted = false")
+        .bind(("field", field_record_id))
+        .bind(("table", table_id_typed))
+        .await?;
+    let field: Field = res
+        .take::<Option<Field>>(0)?
+        .ok_or(ServerFnError::new("Field not found"))?;
+
+    // Parse empty string as None for optional values
+    let value_opt = if new_value.trim().is_empty() {
+        None
+    } else {
+        Some(new_value.clone())
+    };
+
+    // Validate and convert value based on field config
+    let value = match &field.config {
+        FieldConfig::Text(text_config) => match text_config {
+            TextConfig::SingleLine { default, .. } => {
+                let v = SingleLineValue::new(default.clone(), value_opt)
+                    .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+                Value::SingleLine(v)
+            }
+            TextConfig::LongText { rich_text } => {
+                let v = LongTextValue::new(new_value, *rich_text)
+                    .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+                Value::LongText(Box::new(v))
+            }
+            TextConfig::Email => {
+                let v = Email::new(new_value)
+                    .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+                Value::Email(v)
+            }
+            TextConfig::URL => {
+                let v = UrlValue::new(new_value)
+                    .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+                Value::URL(v)
+            }
+            TextConfig::Phone => {
+                let v = PhoneValue::new(new_value, None)
+                    .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+                Value::Phone(v)
+            }
+        },
+        FieldConfig::Number(num_config) => {
+            match num_config {
+                NumberConfig::Number { default } => {
+                    let num_opt = if new_value.trim().is_empty() {
+                        None
+                    } else {
+                        Some(
+                            new_value
+                                .parse::<usize>()
+                                .map_err(|_| ServerFnError::new("Invalid number format"))?,
+                        )
+                    };
+                    let v = NumberValue::new(num_opt, *default)
+                        .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+                    Value::Number(v)
+                }
+                NumberConfig::Decimal { default, .. } => {
+                    // Parse as f64 for decimal
+                    let num_opt = if new_value.trim().is_empty() {
+                        None
+                    } else {
+                        Some(
+                            new_value
+                                .parse::<f64>()
+                                .map_err(|_| ServerFnError::new("Invalid decimal format"))?,
+                        )
+                    };
+                    use charac::models::record::cell::DecimalValue;
+                    let v = DecimalValue::new(num_opt, default.map(|f| f as f64))
+                        .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+                    Value::Decimal(v)
+                }
+                _ => {
+                    // Fallback for other number types - parse as usize
+                    let num_opt = if new_value.trim().is_empty() {
+                        None
+                    } else {
+                        Some(
+                            new_value
+                                .parse::<usize>()
+                                .map_err(|_| ServerFnError::new("Invalid number format"))?,
+                        )
+                    };
+                    let v = NumberValue::new(num_opt, None)
+                        .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+                    Value::Number(v)
+                }
+            }
+        }
+        FieldConfig::Select(_) => {
+            // Store select values as SingleLine for now
+            let v = SingleLineValue::new(None, value_opt)
+                .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+            Value::SingleLine(v)
+        }
+        FieldConfig::Datetime(_) => {
+            // Parse datetime from string
+            use chrono::DateTime;
+            use std::str::FromStr;
+            let dt = DateTime::from_str(&new_value)
+                .map_err(|_| ServerFnError::new("Invalid datetime format. Use ISO 8601 format."))?;
+            use charac::models::record::cell::DateValue;
+            Value::Date(DateValue::new(dt.into()))
+        }
+        FieldConfig::Relation(_) => {
+            // Store relation as SingleLine (RecordId string)
+            let v = SingleLineValue::new(None, value_opt)
+                .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+            Value::SingleLine(v)
+        }
+        FieldConfig::User(_) => {
+            let v = SingleLineValue::new(None, value_opt)
+                .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+            Value::SingleLine(v)
+        }
+        FieldConfig::Computed(_) => {
+            return Err(ServerFnError::new("Cannot edit computed fields"));
+        }
+        FieldConfig::Custom(_) => {
+            let v = SingleLineValue::new(None, value_opt)
+                .map_err(|e| ServerFnError::new(format!("Validation failed: {e}")))?;
+            Value::SingleLine(v)
+        }
+    };
+
+    let cell_value = CellValue::new(value);
+    let record_record_id = RecordId::parse_simple(&record_id)
+        .map_err(|_| ServerFnError::new("Couldn't parse the record id"))?;
+
+    use surrealdb::types::ToSql;
+    let field_id_str = field.id.ok_or(ServerFnError::new("Field ID missing"))?.0.to_sql();
+
+    table_service
+        .update_record(
+            CharacRecordId(record_record_id),
+            RecordPatch::new(Some(vec![(field_id_str, cell_value)])),
+        )
+        .await
+        .map_err(|e| ServerFnError::new(format!("{e:?}")))?;
+
+    let duration = start.elapsed().as_millis();
+    println!("[update_record_cell] finished in {}ms", duration);
+
+    Ok(())
+}
+
+#[server]
 pub async fn create_field(
     base_id: String,
     table_id: String,
@@ -397,9 +539,13 @@ pub async fn create_field(
     let service = crate::get_authenticated_service().await?;
     let mut user_service = service;
 
-    let base_record_id = RecordId::parse_simple(format!("base:{}", base_id.as_str()).as_str())
-        .ok()
-        .ok_or(ServerFnError::new("coudlnt parse the base id"))?;
+    let base_record_id = if base_id.contains(':') {
+        RecordId::parse_simple(&base_id)
+    } else {
+        RecordId::parse_simple(format!("base:{}", base_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the base id"))?;
     let base_id_typed = BaseId(base_record_id);
 
     user_service
@@ -407,9 +553,14 @@ pub async fn create_field(
         .await
         .map_err(|e| ServerFnError::new(format!("{e}")))?;
 
-    let table_record_id = RecordId::parse_simple(format!("table:{}", table_id.as_str()).as_str())
-        .ok()
-        .ok_or(ServerFnError::new("coudlnt parse the table id"))?;
+    let table_record_id = if table_id.contains(':') {
+        RecordId::parse_simple(&table_id)
+    } else {
+        RecordId::parse_simple(format!("table:{}", table_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the table id"))?;
+
     let table_id_typed = TableId(table_record_id);
 
     let table_service = user_service
@@ -420,11 +571,19 @@ pub async fn create_field(
         .await
         .map_err(|e| ServerFnError::new(format!("{e:?}")))?;
 
+    // Default to SingleLine text field with sensible defaults
     let config = FieldConfig::Text(TextConfig::SingleLine {
         default: None,
-        max_length: 255,
+        max_length: 255, // Reasonable default max length
     });
-    let insert_field = InsertField::new(name.clone(), config.clone(), false, true, false);
+
+    let insert_field = InsertField::new(
+        name.clone(),
+        config.clone(),
+        false, // is_primary
+        true,  // is_nullable
+        false, // is_unique
+    );
 
     let field = table_service
         .create_field(insert_field)
@@ -439,4 +598,64 @@ pub async fn create_field(
         name,
         config,
     })
+}
+
+#[server]
+pub async fn delete_field(
+    base_id: String,
+    table_id: String,
+    field_id: String,
+) -> Result<(), ServerFnError> {
+    use charac::models::ids::{BaseId, FieldId, TableId};
+    use std::time::Instant;
+    use surrealdb::types::RecordId;
+
+    let start = Instant::now();
+    let service = crate::get_authenticated_service().await?;
+    let mut user_service = service;
+
+    let base_record_id = if base_id.contains(':') {
+        RecordId::parse_simple(&base_id)
+    } else {
+        RecordId::parse_simple(format!("base:{}", base_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the base id"))?;
+    let base_id_typed = BaseId(base_record_id);
+
+    user_service
+        .open_base(base_id_typed)
+        .await
+        .map_err(|e| ServerFnError::new(format!("{e}")))?;
+
+    let table_record_id = if table_id.contains(':') {
+        RecordId::parse_simple(&table_id)
+    } else {
+        RecordId::parse_simple(format!("table:{}", table_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the table id"))?;
+
+    let table_id_typed = TableId(table_record_id);
+
+    let table_service = user_service
+        .current_base
+        .as_ref()
+        .unwrap()
+        .open_table(table_id_typed.clone())
+        .await
+        .map_err(|e| ServerFnError::new(format!("{e:?}")))?;
+
+    let field_record_id = RecordId::parse_simple(&field_id)
+        .map_err(|_| ServerFnError::new("Couldn't parse the field id"))?;
+
+    table_service
+        .delete_field(FieldId(field_record_id))
+        .await
+        .map_err(|e| ServerFnError::new(format!("{e:?}")))?;
+
+    let duration = start.elapsed().as_millis();
+    println!("[delete_field] finished in {}ms", duration);
+
+    Ok(())
 }

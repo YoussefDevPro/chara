@@ -42,6 +42,22 @@ async fn get_me(user_service: UserService) -> Json<User> {
     Json(user_service.user)
 }
 
+async fn delete_table(
+    user_service: UserService,
+    Path((base_id, table_id)): Path<(String, String)>,
+) -> Result<(), Irror> {
+    let base_id = BaseId(
+        surrealdb::types::RecordId::parse_simple(format!("base:{}", base_id).as_str()).unwrap(),
+    );
+    let table_id = TableId(surrealdb::types::RecordId::parse_simple(&table_id).unwrap());
+
+    let base_service =
+        charac::service::base::BaseService::new(base_id, user_service.user_record_id.clone())
+            .await?;
+    base_service.delete_table(table_id).await?;
+    Ok(())
+}
+
 async fn update_me(
     mut user_service: UserService,
     Json(patch): Json<UserPatch>,
@@ -88,8 +104,11 @@ async fn create_api_token(user_service: UserService) -> Result<Json<String>, Irr
 
 async fn list_tables(
     user_service: UserService,
-    Path(base_id): Path<BaseId>,
+    Path(base_id_raw): Path<String>,
 ) -> Result<Json<Vec<Table>>, Irror> {
+    let base_id = BaseId(
+        surrealdb::types::RecordId::parse_simple(format!("base:{}", base_id_raw).as_str()).unwrap(),
+    );
     let base_service =
         charac::service::base::BaseService::new(base_id, user_service.user_record_id.clone())
             .await?;
@@ -99,9 +118,13 @@ async fn list_tables(
 
 async fn create_table(
     user_service: UserService,
-    Path(base_id): Path<BaseId>,
+    Path(base_id_raw): Path<String>,
     Json(payload): Json<serde_json::Value>,
 ) -> Result<Json<Table>, Irror> {
+    let base_id = BaseId(
+        surrealdb::types::RecordId::parse_simple(format!("base:{}", base_id_raw).as_str()).unwrap(),
+    );
+
     let name = payload["name"]
         .as_str()
         .ok_or_else(|| Irror::Db("Missing name".to_string()))?;
@@ -112,31 +135,15 @@ async fn create_table(
     Ok(Json(table))
 }
 
-async fn delete_table(
-    user_service: UserService,
-    Path((base_id, table_id)): Path<(BaseId, TableId)>,
-) -> Result<(), Irror> {
-    let base_service =
-        charac::service::base::BaseService::new(base_id, user_service.user_record_id.clone())
-            .await?;
-    base_service.delete_table(table_id).await?;
-    Ok(())
-}
-
 async fn get_table_data(
     user_service: UserService,
-    Path(table_id): Path<TableId>,
+    Path(table_id_raw): Path<String>,
 ) -> Result<Json<(Vec<Field>, Vec<Record>)>, Irror> {
-    // We need base_id to create TableService.
-    // Wait, TableService::new also takes base_id.
-    // In the API, we might not always have base_id easily.
-    // Let's check if we can get base_id from table_id.
+    let table_id = TableId(
+        surrealdb::types::RecordId::parse_simple(format!("table:{}", table_id_raw).as_str())
+            .unwrap(),
+    );
 
-    // For now, let's assume we need to provide base_id or we query it.
-    // Actually, TableService::new in core/src/service/table/mod.rs:
-    // pub async fn new(tablee: TableId, base: BaseId, user: UserId) -> Result<Self, Irror>
-
-    // I might need a way to find base_id from table_id.
     let mut res = charac::db::DB
         .query("SELECT VALUE base FROM $table")
         .bind(("table", table_id.clone()))
@@ -157,9 +164,14 @@ async fn get_table_data(
 
 async fn create_field(
     user_service: UserService,
-    Path(table_id): Path<TableId>,
+    Path(table_id_raw): Path<String>,
     Json(field): Json<InsertField>,
 ) -> Result<Json<Field>, Irror> {
+    let table_id = TableId(
+        surrealdb::types::RecordId::parse_simple(format!("table:{}", table_id_raw).as_str())
+            .unwrap(),
+    );
+
     let mut res = charac::db::DB
         .query("SELECT VALUE base FROM $table")
         .bind(("table", table_id.clone()))
@@ -180,8 +192,13 @@ async fn create_field(
 
 async fn list_records(
     user_service: UserService,
-    Path(table_id): Path<TableId>,
+    Path(table_id_raw): Path<String>,
 ) -> Result<Json<Vec<Record>>, Irror> {
+    let table_id = TableId(
+        surrealdb::types::RecordId::parse_simple(format!("table:{}", table_id_raw).as_str())
+            .unwrap(),
+    );
+
     let mut res = charac::db::DB
         .query("SELECT VALUE base FROM $table")
         .bind(("table", table_id.clone()))
@@ -207,9 +224,14 @@ async fn list_records(
 
 async fn create_record(
     user_service: UserService,
-    Path(table_id): Path<TableId>,
+    Path(table_id_raw): Path<String>,
     Json(record): Json<InsertRecord>,
 ) -> Result<Json<Record>, Irror> {
+    let table_id = TableId(
+        surrealdb::types::RecordId::parse_simple(format!("table:{}", table_id_raw).as_str())
+            .unwrap(),
+    );
+
     let mut res = charac::db::DB
         .query("SELECT VALUE base FROM $table")
         .bind(("table", table_id.clone()))
@@ -230,9 +252,17 @@ async fn create_record(
 
 async fn get_record(
     user_service: UserService,
-    Path(table_id): Path<TableId>,
-    Path(record_id): Path<RecordId>,
+    Path((table_id_raw, record_id_raw)): Path<(String, String)>, // Fixed: Combined tuple
 ) -> Result<Json<Record>, Irror> {
+    let table_id = TableId(
+        surrealdb::types::RecordId::parse_simple(format!("table:{}", table_id_raw).as_str())
+            .unwrap(),
+    );
+    let record_id = RecordId(
+        surrealdb::types::RecordId::parse_simple(format!("record:{}", record_id_raw).as_str())
+            .unwrap(),
+    );
+
     let mut res = charac::db::DB
         .query("SELECT VALUE base FROM $table")
         .bind(("table", table_id.clone()))
@@ -253,9 +283,18 @@ async fn get_record(
 
 async fn update_record(
     user_service: UserService,
-    Path((table_id, record_id)): Path<(TableId, RecordId)>,
+    Path((table_id_raw, record_id_raw)): Path<(String, String)>,
     Json(patch): Json<RecordPatch>,
 ) -> Result<Json<Record>, Irror> {
+    let table_id = TableId(
+        surrealdb::types::RecordId::parse_simple(format!("table:{}", table_id_raw).as_str())
+            .unwrap(),
+    );
+    let record_id = RecordId(
+        surrealdb::types::RecordId::parse_simple(format!("record:{}", record_id_raw).as_str())
+            .unwrap(),
+    );
+
     let mut res = charac::db::DB
         .query("SELECT VALUE base FROM $table")
         .bind(("table", table_id.clone()))
@@ -276,8 +315,17 @@ async fn update_record(
 
 async fn delete_record(
     user_service: UserService,
-    Path((table_id, record_id)): Path<(TableId, RecordId)>,
+    Path((table_id_raw, record_id_raw)): Path<(String, String)>,
 ) -> Result<Json<Record>, Irror> {
+    let table_id = TableId(
+        surrealdb::types::RecordId::parse_simple(format!("table:{}", table_id_raw).as_str())
+            .unwrap(),
+    );
+    let record_id = RecordId(
+        surrealdb::types::RecordId::parse_simple(format!("record:{}", record_id_raw).as_str())
+            .unwrap(),
+    );
+
     let mut res = charac::db::DB
         .query("SELECT VALUE base FROM $table")
         .bind(("table", table_id.clone()))
