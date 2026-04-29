@@ -508,7 +508,11 @@ pub async fn update_record_cell(
         .map_err(|_| ServerFnError::new("Couldn't parse the record id"))?;
 
     use surrealdb::types::ToSql;
-    let field_id_str = field.id.ok_or(ServerFnError::new("Field ID missing"))?.0.to_sql();
+    let field_id_str = field
+        .id
+        .ok_or(ServerFnError::new("Field ID missing"))?
+        .0
+        .to_sql();
 
     table_service
         .update_record(
@@ -598,6 +602,80 @@ pub async fn create_field(
         name,
         config,
     })
+}
+
+#[server]
+pub async fn rename_field(
+    base_id: String,
+    table_id: String,
+    field_id: String,
+    new_name: String,
+) -> Result<(), ServerFnError> {
+    use charac::db::DB;
+    use charac::models::field::Field;
+    use charac::models::ids::{BaseId, TableId};
+    use std::time::Instant;
+    use surrealdb::types::RecordId;
+
+    let start = Instant::now();
+    let service = crate::get_authenticated_service().await?;
+    let mut user_service = service;
+
+    let base_record_id = if base_id.contains(':') {
+        RecordId::parse_simple(&base_id)
+    } else {
+        RecordId::parse_simple(format!("base:{}", base_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the base id"))?;
+    let base_id_typed = BaseId(base_record_id);
+
+    user_service
+        .open_base(base_id_typed)
+        .await
+        .map_err(|e| ServerFnError::new(format!("{e}")))?;
+
+    let table_record_id = if table_id.contains(':') {
+        RecordId::parse_simple(&table_id)
+    } else {
+        RecordId::parse_simple(format!("table:{}", table_id).as_str())
+    }
+    .ok()
+    .ok_or(ServerFnError::new("Couldn't parse the table id"))?;
+
+    let table_id_typed = TableId(table_record_id);
+
+    let _table_service = user_service
+        .current_base
+        .as_ref()
+        .unwrap()
+        .open_table(table_id_typed.clone())
+        .await
+        .map_err(|e| ServerFnError::new(format!("{e:?}")))?;
+
+    let field_record_id = RecordId::parse_simple(&field_id)
+        .map_err(|_| ServerFnError::new("Couldn't parse the field id"))?;
+
+    // Verify field exists and belongs to table
+    let mut res = DB
+        .query("SELECT * FROM $field WHERE table = $table AND is_deleted = false")
+        .bind(("field", field_record_id.clone()))
+        .bind(("table", table_id_typed))
+        .await?;
+    let _field: Field = res
+        .take::<Option<Field>>(0)?
+        .ok_or(ServerFnError::new("Field not found"))?;
+
+    // Update the name
+    DB.query("UPDATE $field SET name = $name")
+        .bind(("field", field_record_id))
+        .bind(("name", new_name))
+        .await?;
+
+    let duration = start.elapsed().as_millis();
+    println!("[rename_field] finished in {}ms", duration);
+
+    Ok(())
 }
 
 #[server]

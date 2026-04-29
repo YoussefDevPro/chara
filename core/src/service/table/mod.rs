@@ -208,26 +208,22 @@ impl TableService {
             4
         );
 
-        IF $is_owner OR $has_table_edit THEN
-            (
-                
-                UPDATE record SET cells = object::remove(cells, $field)
-                WHERE table = $table_id AND is_deleted = false;
-                
-                UPDATE $field SET 
-                    is_deleted = true,
-                    updated_at = time::now()
-            )
-        END;
-    ",
+        IF $is_owner OR $has_table_edit THEN {
+            UPDATE record SET cells = object::remove(cells, <string>$field)
+            WHERE table = $table_id AND is_deleted = false;
+            
+            UPDATE $field SET 
+                is_deleted = true,
+                updated_at = time::now();
+        } END;
+        ",
             )
             .bind(("user", self.user.clone()))
             .bind(("base_id", self.base.clone()))
             .bind(("table_id", self.table_record_id.clone()))
             .bind(("field", field))
             .await?;
-
-        let deleted_field: Option<Field> = res.take(4)?;
+        let deleted_field: Option<Field> = res.take(2)?;
 
         match deleted_field {
             Some(f) => Ok(f),
