@@ -1,6 +1,14 @@
-use super::server::{BaseTable, TableField};
+use crate::base::{BaseTable, TableData, TableField};
 use crate::components::ui::{
     button::Button,
+    dialog::{
+        Dialog, DialogBody, DialogClose, DialogContent, DialogCustomTrigger, DialogDescription,
+        DialogFooter, DialogHeader, DialogTitle,
+    },
+    dropdown_menu::{
+        DropdownMenu, DropdownMenuAction, DropdownMenuContent, DropdownMenuLabel,
+        DropdownMenuTrigger,
+    },
     input::Input,
     label::Label,
     sheet::{
@@ -124,6 +132,99 @@ pub fn EditableFieldHeader(
     }
 }
 
+#[component]
+pub fn InlineFieldCreator(
+    create_action: Action<(String, Option<String>), Result<TableField, ServerFnError>>,
+    on_cancel: Callback<()>,
+) -> impl IntoView {
+    let (name, set_name) = signal(String::new());
+    let (selected_kind, set_selected_kind) = signal("Text".to_string());
+    let input_ref = NodeRef::<leptos::html::Input>::new();
+
+    Effect::new(move |_| {
+        if let Some(input) = input_ref.get() {
+            let _ = input.focus();
+        }
+    });
+
+    let submit = move || {
+        let val = name.get_untracked();
+        let kind = selected_kind.get_untracked();
+        if !val.trim().is_empty() {
+            create_action.dispatch((val, Some(kind)));
+        }
+        on_cancel.run(());
+    };
+
+    let kind_icon = move || match selected_kind.get().as_str() {
+        "Number" => view! { <Hash class="size-4" /> }.into_any(),
+        "Email" => view! { <Mail class="size-4" /> }.into_any(),
+        "URL" => view! { <Globe class="size-4" /> }.into_any(),
+        "Phone" => view! { <Phone class="size-4" /> }.into_any(),
+        "LongText" => view! { <AlignLeft class="size-4" /> }.into_any(),
+        "Date" => view! { <Calendar class="size-4" /> }.into_any(),
+        _ => view! { <Type class="size-4" /> }.into_any(),
+    };
+
+    view! {
+        <div class="flex items-center gap-2 w-full px-4 h-full">
+            <DropdownMenu>
+                <DropdownMenuTrigger class="hover:bg-muted p-1 rounded transition-colors">
+                    {kind_icon}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuLabel>"Select Type"</DropdownMenuLabel>
+                    <DropdownMenuAction on:click=move |_| set_selected_kind.set("Text".to_string())>
+                        <Type class="size-4 mr-2" />
+                        "Text"
+                    </DropdownMenuAction>
+                    <DropdownMenuAction on:click=move |_| set_selected_kind.set("Number".to_string())>
+                        <Hash class="size-4 mr-2" />
+                        "Number"
+                    </DropdownMenuAction>
+                    <DropdownMenuAction on:click=move |_| set_selected_kind.set("LongText".to_string())>
+                        <AlignLeft class="size-4 mr-2" />
+                        "Long Text"
+                    </DropdownMenuAction>
+                    <DropdownMenuAction on:click=move |_| set_selected_kind.set("Email".to_string())>
+                        <Mail class="size-4 mr-2" />
+                        "Email"
+                    </DropdownMenuAction>
+                    <DropdownMenuAction on:click=move |_| set_selected_kind.set("Phone".to_string())>
+                        <Phone class="size-4 mr-2" />
+                        "Phone"
+                    </DropdownMenuAction>
+                    <DropdownMenuAction on:click=move |_| set_selected_kind.set("URL".to_string())>
+                        <Globe class="size-4 mr-2" />
+                        "URL"
+                    </DropdownMenuAction>
+                    <DropdownMenuAction on:click=move |_| set_selected_kind.set("Date".to_string())>
+                        <Calendar class="size-4 mr-2" />
+                        "Date"
+                    </DropdownMenuAction>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            <input
+                node_ref=input_ref
+                type="text"
+                class="w-full bg-transparent border-none focus:outline-none font-bold text-sm"
+                placeholder="Field name..."
+                prop:value=move || name.get()
+                on:input=move |ev| set_name.set(event_target_value(&ev))
+                on:keydown=move |ev| {
+                    match ev.key().as_str() {
+                        "Enter" => submit(),
+                        "Escape" => on_cancel.run(()),
+                        _ => {}
+                    }
+                }
+                on:blur=move |_| {
+                    // on_cancel.run(())
+                }
+            />
+        </div>
+    }
+}
 
 #[component]
 pub fn CreateTableDialog(
@@ -141,14 +242,14 @@ pub fn CreateTableDialog(
     };
 
     view! {
-        <Sheet>
-            <SheetCustomTrigger>{title}</SheetCustomTrigger>
-            <SheetContent class="sm:max-w-[500px]">
-                <SheetBody>
-                    <SheetHeader>
-                        <SheetTitle>"Create a Table!"</SheetTitle>
-                        <SheetDescription>"Give your table a name."</SheetDescription>
-                    </SheetHeader>
+        <Dialog>
+            <DialogCustomTrigger>{title}</DialogCustomTrigger>
+            <DialogContent class="sm:max-w-[500px]">
+                <DialogBody>
+                    <DialogHeader>
+                        <DialogTitle>"Create a Table!"</DialogTitle>
+                        <DialogDescription>"Give your table a name."</DialogDescription>
+                    </DialogHeader>
                     <div class="flex flex-col gap-4 py-4">
                         <Label html_for="table-name">"Table Name"</Label>
                         <Input
@@ -157,15 +258,15 @@ pub fn CreateTableDialog(
                             on:keydown=move |ev| if ev.key() == "Enter" { submit() }
                         />
                     </div>
-                    <SheetFooter>
-                        <SheetClose class="w-full sm:w-fit">"Cancel"</SheetClose>
+                    <DialogFooter>
+                        <DialogClose class="w-full sm:w-fit">"Cancel"</DialogClose>
                         <Button class="w-full sm:w-fit" on:click=move |_| submit()>
                             "Create"
                         </Button>
-                    </SheetFooter>
-                </SheetBody>
-            </SheetContent>
-        </Sheet>
+                    </DialogFooter>
+                </DialogBody>
+            </DialogContent>
+        </Dialog>
     }
 }
 
@@ -187,27 +288,27 @@ pub fn TableBox(table: BaseTable) -> impl IntoView {
 #[component]
 pub fn CreateFieldDialog(
     title: impl IntoView + 'static,
-    create_action: Action<String, Result<TableField, ServerFnError>>,
+    create_action: Action<(String, Option<String>), Result<TableField, ServerFnError>>,
 ) -> impl IntoView {
     let name = RwSignal::new(String::new());
 
     let submit = move || {
         let val = name.get();
         if !val.is_empty() {
-            create_action.dispatch(val);
+            create_action.dispatch((val, None));
             name.set(String::new());
         }
     };
 
     view! {
-        <Sheet>
-            <SheetCustomTrigger>{title}</SheetCustomTrigger>
-            <SheetContent class="sm:max-w-[500px]">
-                <SheetBody>
-                    <SheetHeader>
-                        <SheetTitle>"Create a Field!"</SheetTitle>
-                        <SheetDescription>"Give your field a name. You can change the type later."</SheetDescription>
-                    </SheetHeader>
+        <Dialog>
+            <DialogCustomTrigger>{title}</DialogCustomTrigger>
+            <DialogContent class="sm:max-w-[500px]">
+                <DialogBody>
+                    <DialogHeader>
+                        <DialogTitle>"Create a Field!"</DialogTitle>
+                        <DialogDescription>"Give your field a name. You can change the type later."</DialogDescription>
+                    </DialogHeader>
                     <div class="flex flex-col gap-4 py-4">
                         <Label html_for="field-name">"Field Name"</Label>
                         <Input
@@ -216,15 +317,15 @@ pub fn CreateFieldDialog(
                             on:keydown=move |ev| if ev.key() == "Enter" { submit() }
                         />
                     </div>
-                    <SheetFooter>
-                        <SheetClose class="w-full sm:w-fit">"Cancel"</SheetClose>
+                    <DialogFooter>
+                        <DialogClose class="w-full sm:w-fit">"Cancel"</DialogClose>
                         <Button class="w-full sm:w-fit" on:click=move |_| submit()>
                             "Create"
                         </Button>
-                    </SheetFooter>
-                </SheetBody>
-            </SheetContent>
-        </Sheet>
+                    </DialogFooter>
+                </DialogBody>
+            </DialogContent>
+        </Dialog>
     }
 }
 
@@ -248,7 +349,7 @@ pub fn RenameFieldDialog(
     view! {
         <Sheet>
             <SheetCustomTrigger>{title}</SheetCustomTrigger>
-            <SheetContent class="sm:max-w-[500px]">
+            <SheetContent class="sm:max-w-[400px]">
                 <SheetBody>
                     <SheetHeader>
                         <SheetTitle>"Rename Field"</SheetTitle>

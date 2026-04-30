@@ -20,9 +20,10 @@ use crate::components::{
     },
 };
 use components::{
-    CreateFieldDialog, CreateTableDialog, EditableFieldHeader, FieldIcon, RenameFieldDialog,
+    CreateFieldDialog, CreateTableDialog, EditableFieldHeader, FieldIcon, InlineFieldCreator,
+    RenameFieldDialog,
 };
-use icons::{FolderCode, List, Lock, Plus, Trash};
+use icons::{FolderCode, List, Lock, Plus, Trash, Type};
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 use server::*;
@@ -230,6 +231,7 @@ fn TableGrid(base_id: String, table_id: String, is_active: Memo<bool>) -> impl I
     let base_id_sv = StoredValue::new(base_id);
     let table_id_sv = StoredValue::new(table_id);
     let (refresh_counter, set_refresh_counter) = signal(0);
+    let (is_creating_field, set_is_creating_field) = signal(false);
 
     let table_data_res = Resource::new(
         move || {
@@ -254,11 +256,12 @@ fn TableGrid(base_id: String, table_id: String, is_active: Memo<bool>) -> impl I
         async move { update_record_cell(base_id, table_id, record_id, field_name, new_value).await }
     });
 
-    let create_field_action = Action::new(move |name: &String| {
+    let create_field_action = Action::new(move |(name, kind): &(String, Option<String>)| {
         let name = name.clone();
+        let kind = kind.clone();
         let b_id = base_id_sv.get_value();
         let t_id = table_id_sv.get_value();
-        async move { create_field(b_id, t_id, name).await }
+        async move { create_field(b_id, t_id, name, kind).await }
     });
 
     let rename_field_action = Action::new(move |(field_id, new_name): &(String, String)| {
@@ -327,7 +330,7 @@ fn TableGrid(base_id: String, table_id: String, is_active: Memo<bool>) -> impl I
             if data.fields.is_empty() {
                 if !create_field_action.pending().get_untracked() && !init_started.get_untracked() {
                     init_started.set(true);
-                    create_field_action.dispatch("Name".to_string());
+                    create_field_action.dispatch(("Name".to_string(), None));
                 }
             } else if data.records.is_empty() && !create_record_action.pending().get_untracked() {
                 create_record_action.dispatch(());
@@ -415,17 +418,30 @@ fn TableGrid(base_id: String, table_id: String, is_active: Memo<bool>) -> impl I
                                                                 }
                                                             })
                                                             .collect_view()}
-                                                        <DataTableHead class="w-10 p-0 text-center">
-                                                            <CreateFieldDialog
-                                                                title=move || {
+                                                        {move || {
+                                                            is_creating_field
+                                                                .get()
+                                                                .then(|| {
                                                                     view! {
-                                                                        <Button variant=ButtonVariant::Ghost size=ButtonSize::Icon>
-                                                                            <Plus class="size-4" />
-                                                                        </Button>
+                                                                        <DataTableHead class="font-bold border-r last:border-r-0 min-w-[200px] p-0">
+                                                                            <InlineFieldCreator
+                                                                                create_action=create_field_action
+                                                                                on_cancel=Callback::new(move |_| {
+                                                                                    set_is_creating_field.set(false);
+                                                                                })
+                                                                            />
+                                                                        </DataTableHead>
                                                                     }
-                                                                }
-                                                                create_action=create_field_action
-                                                            />
+                                                                })
+                                                        }}
+                                                        <DataTableHead class="w-10 p-0 text-center">
+                                                            <Button
+                                                                variant=ButtonVariant::Ghost
+                                                                size=ButtonSize::Icon
+                                                                on:click=move |_| set_is_creating_field.set(true)
+                                                            >
+                                                                <Plus class="size-4" />
+                                                            </Button>
                                                         </DataTableHead>
                                                     </DataTableRow>
                                                 </DataTableHeader>

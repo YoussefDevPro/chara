@@ -533,8 +533,9 @@ pub async fn create_field(
     base_id: String,
     table_id: String,
     name: String,
+    kind: Option<String>,
 ) -> Result<TableField, ServerFnError> {
-    use charac::models::field::{FieldConfig, InsertField, TextConfig};
+    use charac::models::field::{FieldConfig, InsertField, NumberConfig, TextConfig};
     use charac::models::ids::{BaseId, TableId};
     use std::time::Instant;
     use surrealdb::types::{RecordId, ToSql};
@@ -575,11 +576,25 @@ pub async fn create_field(
         .await
         .map_err(|e| ServerFnError::new(format!("{e:?}")))?;
 
-    // Default to SingleLine text field with sensible defaults
-    let config = FieldConfig::Text(TextConfig::SingleLine {
-        default: None,
-        max_length: 255, // Reasonable default max length
-    });
+    // Determine config based on kind
+    let config = match kind.as_deref() {
+        Some("Number") => FieldConfig::Number(NumberConfig::Number { default: None }),
+        Some("Email") => FieldConfig::Text(TextConfig::Email),
+        Some("URL") => FieldConfig::Text(TextConfig::URL),
+        Some("Phone") => FieldConfig::Text(TextConfig::Phone),
+        Some("LongText") => FieldConfig::Text(TextConfig::LongText { rich_text: false }),
+        Some("Date") => {
+            use charac::models::field::{DateFormat, DatetimeConfig};
+            FieldConfig::Datetime(DatetimeConfig::Date {
+                format: DateFormat::ISO,
+                include_time: false,
+            })
+        }
+        _ => FieldConfig::Text(TextConfig::SingleLine {
+            default: None,
+            max_length: 255,
+        }),
+    };
 
     let insert_field = InsertField::new(
         name.clone(),
