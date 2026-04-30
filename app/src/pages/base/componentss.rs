@@ -8,7 +8,6 @@ use crate::components::ui::{
     label::Label,
 };
 use leptos::prelude::*;
-use std::rc::Rc;
 
 use super::server::BaseTable;
 
@@ -56,15 +55,18 @@ pub fn CreateTableDialog(
                     </div>
                     <DialogFooter>
                         <DialogClose class="w-full sm:w-fit">"Cancel"</DialogClose>
-                        <Button attr:r#type="button" on:click=move |_| {
-                            let val = name_click.get_untracked();
-                            if !val.is_empty() {
-                                leptos::task::spawn_local(async move {
-                                    create_action.dispatch(val);
-                                });
-                                name_click.set("".to_string());
+                        <Button
+                            attr:r#type="button"
+                            on:click=move |_| {
+                                let val = name_click.get_untracked();
+                                if !val.is_empty() {
+                                    leptos::task::spawn_local(async move {
+                                        create_action.dispatch(val);
+                                    });
+                                    name_click.set("".to_string());
+                                }
                             }
-                        }>
+                        >
                             "Create"
                         </Button>
                     </DialogFooter>
@@ -135,11 +137,14 @@ pub fn RenameFieldDialog(
     rename_action: Action<(String, String), Result<(), ServerFnError>>,
     field_id: String,
 ) -> impl IntoView {
-    let field_id_stored = StoredValue::new(field_id);
-    let name = ArcRwSignal::new(current_name);
-    let name_input = name.clone();
-    let name_keydown = name.clone();
-    let name_click = name.clone();
+    let name_input = ArcRwSignal::new(current_name);
+    let yet_another_field_clone = field_id.clone();
+    let submit = move |name: String| {
+        let field_clone = yet_another_field_clone.clone();
+        if !name.is_empty() {
+            rename_action.dispatch((field_clone, name));
+        }
+    };
 
     view! {
         <Dialog>
@@ -154,21 +159,7 @@ pub fn RenameFieldDialog(
                     <div class="flex flex-col gap-4 py-4">
                         <div class="flex flex-col gap-2">
                             <Label html_for="rename-field-name">Name</Label>
-                            <Input
-                                id="rename-field-name"
-                                bind_value=name_input
-                                on:keydown=move |ev| {
-                                    if ev.key() == "Enter" {
-                                        let current_val = name_keydown.get_untracked();
-                                        let id = field_id_stored.get_value();
-                                        if !current_val.is_empty() {
-                                            leptos::task::spawn_local(async move {
-                                                rename_action.dispatch((id, current_val));
-                                            });
-                                        }
-                                    }
-                                }
-                            />
+                            <Input id="rename-field-name" bind_value=name_input />
                         </div>
                     </div>
 
@@ -177,15 +168,7 @@ pub fn RenameFieldDialog(
                         <Button
                             attr:r#type="button"
                             class="w-full sm:w-[120px]"
-                            on:click=move |_| {
-                                let current_val = name_click.get_untracked();
-                                let id = field_id_stored.get_value();
-                                if !current_val.is_empty() {
-                                    leptos::task::spawn_local(async move {
-                                        rename_action.dispatch((id, current_val));
-                                    });
-                                }
-                            }
+                            on:click=|_| submit(name_input.clone().get_untracked())
                         >
                             "Rename"
                         </Button>

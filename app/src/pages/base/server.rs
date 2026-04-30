@@ -620,14 +620,11 @@ pub async fn rename_field(
     let start = Instant::now();
     let service = crate::get_authenticated_service().await?;
     let mut user_service = service;
+    dbg!(&base_id, &table_id, &field_id);
 
-    let base_record_id = if base_id.contains(':') {
-        RecordId::parse_simple(&base_id)
-    } else {
-        RecordId::parse_simple(format!("base:{}", base_id).as_str())
-    }
-    .ok()
-    .ok_or(ServerFnError::new("Couldn't parse the base id"))?;
+    let base_record_id = RecordId::parse_simple(format!("base:{}", base_id).as_str())
+        .ok()
+        .ok_or(ServerFnError::new("Couldn't parse the base id"))?;
     let base_id_typed = BaseId(base_record_id);
 
     user_service
@@ -635,13 +632,9 @@ pub async fn rename_field(
         .await
         .map_err(|e| ServerFnError::new(format!("{e}")))?;
 
-    let table_record_id = if table_id.contains(':') {
-        RecordId::parse_simple(&table_id)
-    } else {
-        RecordId::parse_simple(format!("table:{}", table_id).as_str())
-    }
-    .ok()
-    .ok_or(ServerFnError::new("Couldn't parse the table id"))?;
+    let table_record_id = RecordId::parse_simple(&table_id)
+        .ok()
+        .ok_or(ServerFnError::new("Couldn't parse the table id"))?;
 
     let table_id_typed = TableId(table_record_id);
 
@@ -656,7 +649,6 @@ pub async fn rename_field(
     let field_record_id = RecordId::parse_simple(&field_id)
         .map_err(|_| ServerFnError::new("Couldn't parse the field id"))?;
 
-    // Verify field exists and belongs to table
     let mut res = DB
         .query("SELECT * FROM $field WHERE table = $table AND is_deleted = false")
         .bind(("field", field_record_id.clone()))
@@ -665,12 +657,14 @@ pub async fn rename_field(
     let _field: Field = res
         .take::<Option<Field>>(0)?
         .ok_or(ServerFnError::new("Field not found"))?;
+    dbg!(&new_name);
 
-    // Update the name
-    DB.query("UPDATE $field SET name = $name")
+    let res = DB
+        .query("UPDATE $field SET name = $name")
         .bind(("field", field_record_id))
         .bind(("name", new_name))
         .await?;
+    dbg!(res);
 
     let duration = start.elapsed().as_millis();
     println!("[rename_field] finished in {}ms", duration);
