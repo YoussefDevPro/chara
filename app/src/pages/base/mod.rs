@@ -19,16 +19,15 @@ use crate::components::{
         theme_toggle::ThemeToggle,
     },
 };
-use componentss::{CreateFieldDialog, CreateTableDialog, RenameFieldDialog};
-use icons::{
-    AlignLeft, Calendar, Cpu, FolderCode, Globe, Hash, Link, List, Lock, Mail, Phone, Plus,
-    Settings, Trash, Type, User,
+use components::{
+    CreateFieldDialog, CreateTableDialog, EditableFieldHeader, FieldIcon, RenameFieldDialog,
 };
+use icons::{FolderCode, List, Lock, Plus, Trash};
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 use server::*;
 
-mod componentss;
+mod components;
 pub mod server;
 
 #[component]
@@ -227,27 +226,6 @@ pub fn BasePage() -> impl IntoView {
 }
 
 #[component]
-fn FieldIcon(config: charac::models::field::FieldConfig) -> impl IntoView {
-    use charac::models::field::{FieldConfig, TextConfig};
-    match config {
-        FieldConfig::Text(t) => match t {
-            TextConfig::SingleLine { .. } => view! { <Type class="size-4" /> }.into_any(),
-            TextConfig::LongText { .. } => view! { <AlignLeft class="size-4" /> }.into_any(),
-            TextConfig::Email => view! { <Mail class="size-4" /> }.into_any(),
-            TextConfig::URL => view! { <Globe class="size-4" /> }.into_any(),
-            TextConfig::Phone => view! { <Phone class="size-4" /> }.into_any(),
-        },
-        FieldConfig::Number(_) => view! { <Hash class="size-4" /> }.into_any(),
-        FieldConfig::Select(_) => view! { <List class="size-4" /> }.into_any(),
-        FieldConfig::Datetime(_) => view! { <Calendar class="size-4" /> }.into_any(),
-        FieldConfig::Relation(_) => view! { <Link class="size-4" /> }.into_any(),
-        FieldConfig::User(_) => view! { <User class="size-4" /> }.into_any(),
-        FieldConfig::Computed(_) => view! { <Cpu class="size-4" /> }.into_any(),
-        FieldConfig::Custom(_) => view! { <Settings class="size-4" /> }.into_any(),
-    }
-}
-
-#[component]
 fn TableGrid(base_id: String, table_id: String, is_active: Memo<bool>) -> impl IntoView {
     let base_id_sv = StoredValue::new(base_id);
     let table_id_sv = StoredValue::new(table_id);
@@ -391,29 +369,18 @@ fn TableGrid(base_id: String, table_id: String, is_active: Memo<bool>) -> impl I
                                                                 view! {
                                                                     <DataTableHead class="font-bold border-r last:border-r-0 min-w-[200px] p-0">
                                                                         <ContextMenu>
-                                                                            <ContextMenuTrigger class="flex items-center gap-2 w-full h-full px-4 hover:bg-muted/50 transition-colors cursor-context-menu">
-                                                                                <FieldIcon config=field.config.clone() />
-                                                                                {field_name_for_header}
+                                                                            <ContextMenuTrigger class="flex items-center gap-2 w-full h-full hover:bg-muted/50 transition-colors cursor-context-menu">
+                                                                                <EditableFieldHeader
+                                                                                    field_id=field_id.clone()
+                                                                                    field_name=field_name.clone()
+                                                                                    config=field.config.clone()
+                                                                                    rename_action=rename_field_action
+                                                                                />
                                                                             </ContextMenuTrigger>
                                                                             <ContextMenuContent>
                                                                                 <ContextMenuLabel>"Field Actions"</ContextMenuLabel>
                                                                                 <Separator class="my-1" />
                                                                                 <ContextMenuGroup>
-                                                                                    <ContextMenuItem>
-                                                                                        <RenameFieldDialog
-                                                                                            title=move || {
-                                                                                                view! {
-                                                                                                    <ContextMenuAction>
-                                                                                                        <Type class="size-4 mr-2" />
-                                                                                                        "Rename Field"
-                                                                                                    </ContextMenuAction>
-                                                                                                }
-                                                                                            }
-                                                                                            current_name=field_name_for_dialog.clone()
-                                                                                            rename_action=rename_field_action
-                                                                                            field_id=field_id_for_rename
-                                                                                        />
-                                                                                    </ContextMenuItem>
                                                                                     <ContextMenuItem>
                                                                                         <CreateFieldDialog
                                                                                             title=move || {
